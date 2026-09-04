@@ -1,0 +1,305 @@
+/* Restaurant Detail Page Container */
+.restaurant-detail-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    min-height: calc(100vh - 200px);
+}
+
+/* Dark Mode */
+.dark-mode .restaurant-detail-page {
+    --text-primary: #ffffff;
+    --text-secondary: #aaa;
+    --border-color: #333;
+    --card-bg: #2a2a2a;
+}
+
+/* Loading State */
+.restaurant-detail-loading {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color, #e0e0e0);
+    border-top-color: #ff4757;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error State */
+.restaurant-detail-error {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.error-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.restaurant-detail-error h3 {
+    font-size: 20px;
+    margin: 0 0 8px 0;
+    color: var(--text-primary, #333);
+}
+
+.restaurant-detail-error p {
+    color: var(--text-secondary, #666);
+    margin-bottom: 24px;
+}
+
+/* Restaurant Tabs */
+.restaurant-tabs {
+    display: flex;
+    gap: 12px;
+    margin: 24px 0;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-secondary, #666);
+    border-radius: 8px;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 71, 87, 0.1);
+    color: #ff4757;
+}
+
+.tab-btn.active {
+    background: #ff4757;
+    color: white;
+}
+
+/* Tab Content */
+.restaurant-tab-content {
+    margin-top: 24px;
+}
+
+/* Menu Container */
+.menu-container {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+/* Info Tab */
+.info-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.info-card {
+    background: var(--card-bg, #f8f9fa);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.info-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--text-primary, #333);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.info-card p {
+    margin: 8px 0;
+    color: var(--text-secondary, #666);
+    line-height: 1.6;
+}
+
+/* Hours List */
+.hours-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hour-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border-color, #e0e0e0);
+}
+
+.hour-row:last-child {
+    border-bottom: none;
+}
+
+.hour-row span:first-child {
+    font-weight: 500;
+    color: var(--text-primary, #333);
+}
+
+.hour-row span:last-child {
+    color: var(--text-secondary, #666);
+}
+
+/* Info List */
+.info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-list li {
+    padding: 8px 0;
+    color: var(--text-secondary, #666);
+    border-bottom: 1px dashed var(--border-color, #e0e0e0);
+}
+
+.info-list li:last-child {
+    border-bottom: none;
+}
+
+/* Cart Preview (Sticky) */
+.cart-preview {
+    position: sticky;
+    bottom: 20px;
+    margin-top: 32px;
+    background: var(--card-bg, #ffffff);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border-color, #e0e0e0);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    z-index: 10;
+}
+
+.cart-info {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cart-count {
+    font-weight: 600;
+    color: var(--text-primary, #333);
+}
+
+.cart-total {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ff4757;
+}
+
+.cart-preview-btn {
+    padding: 8px 24px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .restaurant-detail-page {
+        padding: 20px;
+    }
+
+    .restaurant-tabs {
+        gap: 8px;
+    }
+
+    .tab-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .info-card {
+        padding: 20px;
+    }
+
+    .cart-preview {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .cart-info {
+        justify-content: center;
+    }
+
+    .cart-preview-btn {
+        width: 100%;
+    }
+
+    .hour-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .restaurant-detail-page {
+        padding: 16px;
+    }
+
+    .tab-btn {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    .info-card {
+        padding: 16px;
+    }
+
+    .info-card h3 {
+        font-size: 16px;
+    }
+
+    .cart-total {
+        font-size: 18px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menu-section,
+.info-card {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Accessibility */
+.tab-btn:focus-visible,
+.cart-preview-btn:focus-visible {
+    outline: 2px solid #ff4757;
+    outline-offset: 2px;
+}

@@ -1,0 +1,171 @@
+// backend/utils/generateToken.js
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+/**
+ * Generate JWT Token for user authentication
+ * @param {Object} user - User object containing user_id, email, user_type
+ * @returns {string} JWT token
+ */
+const generateToken = (user) => {
+    const payload = {
+        userId: user.user_id || user.id,
+        email: user.email,
+        userType: user.user_type || user.userType || 'customer'
+    };
+
+    const options = {
+        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+    };
+
+    return jwt.sign(payload, process.env.JWT_SECRET || 'your_secret_key', options);
+};
+
+/**
+ * Generate Refresh Token (longer validity)
+ * @param {Object} user - User object
+ * @returns {string} Refresh token
+ */
+const generateRefreshToken = (user) => {
+    const payload = {
+        userId: user.user_id || user.id,
+        email: user.email,
+        userType: user.user_type || user.userType || 'customer',
+        isRefreshToken: true
+    };
+
+    const options = {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d'
+    };
+
+    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your_refresh_secret', options);
+};
+
+/**
+ * Generate both Access and Refresh tokens
+ * @param {Object} user - User object
+ * @returns {Object} { accessToken, refreshToken }
+ */
+const generateTokens = (user) => {
+    return {
+        accessToken: generateToken(user),
+        refreshToken: generateRefreshToken(user)
+    };
+};
+
+/**
+ * Verify JWT Token
+ * @param {string} token - JWT token to verify
+ * @param {boolean} isRefreshToken - Whether this is a refresh token
+ * @returns {Object|null} Decoded token payload or null if invalid
+ */
+const verifyToken = (token, isRefreshToken = false) => {
+    try {
+        if (!token) return null;
+
+        const secret = isRefreshToken
+            ? (process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your_refresh_secret')
+            : (process.env.JWT_SECRET || 'your_secret_key');
+
+        const decoded = jwt.verify(token, secret);
+        return decoded;
+    } catch (error) {
+        console.error('Token verification failed:', error.message);
+        return null;
+    }
+};
+
+/**
+ * Decode JWT Token without verification
+ * @param {string} token - JWT token
+ * @returns {Object|null} Decoded token payload
+ */
+const decodeToken = (token) => {
+    try {
+        if (!token) return null;
+        return jwt.decode(token);
+    } catch (error) {
+        console.error('Token decode failed:', error.message);
+        return null;
+    }
+};
+
+/**
+ * Check if token is expired
+ * @param {string} token - JWT token
+ * @returns {boolean} True if expired
+ */
+const isTokenExpired = (token) => {
+    const decoded = decodeToken(token);
+    if (!decoded || !decoded.exp) return true;
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    return decoded.exp < currentTime;
+};
+
+/**
+ * Get token expiration time
+ * @param {string} token - JWT token
+ * @returns {Date|null} Expiration date or null
+ */
+const getTokenExpiration = (token) => {
+    const decoded = decodeToken(token);
+    if (!decoded || !decoded.exp) return null;
+
+    return new Date(decoded.exp * 1000);
+};
+
+/**
+ * Refresh access token using refresh token
+ * @param {string} refreshToken - Refresh token
+ * @returns {Object|null} New access token or null
+ */
+const refreshAccessToken = (refreshToken) => {
+    try {
+        const decoded = verifyToken(refreshToken, true);
+
+        if (!decoded || !decoded.isRefreshToken) {
+            return null;
+        }
+
+        const newAccessToken = generateToken({
+            user_id: decoded.userId,
+            email: decoded.email,
+            user_type: decoded.userType
+        });
+
+        return {
+            accessToken: newAccessToken,
+            userId: decoded.userId,
+            email: decoded.email,
+            userType: decoded.userType
+        };
+    } catch (error) {
+        console.error('Refresh token failed:', error.message);
+        return null;
+    }
+};
+
+/**
+ * Extract token from Authorization header
+ * @param {string} authHeader - Authorization header value
+ * @returns {string|null} Token or null
+ */
+const extractTokenFromHeader = (authHeader) => {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return null;
+    }
+    return authHeader.split(' ')[1];
+};
+
+module.exports = {
+    generateToken,
+    generateRefreshToken,
+    generateTokens,
+    verifyToken,
+    decodeToken,
+    isTokenExpired,
+    getTokenExpiration,
+    refreshAccessToken,
+    extractTokenFromHeader
+};

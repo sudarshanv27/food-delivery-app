@@ -1,0 +1,25 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Allow all crawlers to access all pages
+Disallow: /api/
+Disallow: /admin/
+Disallow: /payment/
+Disallow: /checkout/
+
+# Sitemap location
+Sitemap: https://fooddelivery.com/sitemap.xml
+
+# Crawl delay to prevent server overload
+Crawl-delay: 1
+
+# Specify host
+Host: https://fooddelivery.com
+
+# Block specific bots if needed
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /

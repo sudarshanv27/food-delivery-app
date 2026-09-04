@@ -1,0 +1,448 @@
+/* User Reviews Container */
+.user-reviews {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+    background: var(--reviews-bg, #ffffff);
+    border-radius: 20px;
+}
+
+/* Dark Mode */
+.dark-mode .user-reviews {
+    --reviews-bg: #1e1e1e;
+    --text-primary: #ffffff;
+    --text-secondary: #aaa;
+    --border-color: #333;
+    --card-bg: #2a2a2a;
+}
+
+/* Reviews Header */
+.reviews-header {
+    margin-bottom: 32px;
+}
+
+.reviews-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 20px 0;
+    color: var(--text-primary, #333);
+}
+
+/* Reviews Stats */
+.reviews-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 107, 129, 0.1) 100%);
+    border-radius: 12px;
+    padding: 16px 24px;
+    text-align: center;
+    min-width: 120px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ff4757;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+}
+
+/* Loading State */
+.user-reviews-loading {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color, #e0e0e0);
+    border-top-color: #ff4757;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Empty State */
+.user-reviews-empty {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.user-reviews-empty h3 {
+    font-size: 20px;
+    margin: 0 0 8px 0;
+    color: var(--text-primary, #333);
+}
+
+.user-reviews-empty p {
+    color: var(--text-secondary, #666);
+    margin-bottom: 24px;
+}
+
+/* Reviews List */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Review Card */
+.review-card {
+    background: var(--card-bg, #f8f9fa);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.review-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Review Header */
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.restaurant-info {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.restaurant-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.restaurant-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    color: var(--text-primary, #333);
+}
+
+/* Review Actions */
+.review-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+}
+
+.edit-btn:hover {
+    background: rgba(76, 175, 80, 0.1);
+    transform: scale(1.05);
+}
+
+.delete-btn:hover {
+    background: rgba(244, 67, 54, 0.1);
+    transform: scale(1.05);
+}
+
+/* Review Body */
+.review-body {
+    margin-bottom: 16px;
+}
+
+.review-comment {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-primary, #333);
+    margin: 0 0 12px 0;
+}
+
+/* Review Images */
+.review-images {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.review-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.review-image:hover {
+    transform: scale(1.05);
+}
+
+/* Review Footer */
+.review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.review-date {
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+}
+
+.helpful-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary, #666);
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.helpful-btn:hover:not(:disabled) {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+}
+
+.helpful-btn.helped {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+    cursor: default;
+}
+
+.helpful-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Edit Review Modal */
+.edit-review-form {
+    padding: 8px;
+}
+
+.restaurant-edit-info {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.edit-restaurant-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.restaurant-edit-info h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: var(--text-primary, #333);
+}
+
+/* Form Group */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-primary, #333);
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    background: var(--input-bg, #ffffff);
+    color: var(--text-primary, #333);
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #ff4757;
+    box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+}
+
+.form-group textarea.error {
+    border-color: #f44336;
+}
+
+/* Error Message */
+.error-message {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #f44336;
+}
+
+/* Edit Actions */
+.edit-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.edit-actions button {
+    flex: 1;
+}
+
+/* Dark Mode Adjustments */
+.dark-mode .review-card {
+    background: #2a2a2a;
+    border-color: #444;
+}
+
+.dark-mode .restaurant-name {
+    color: #fff;
+}
+
+.dark-mode .review-comment {
+    color: #e0e0e0;
+}
+
+.dark-mode .form-group textarea {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #fff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .user-reviews {
+        padding: 20px;
+    }
+
+    .reviews-header h2 {
+        font-size: 24px;
+    }
+
+    .review-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .review-actions {
+        align-self: flex-end;
+    }
+
+    .review-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .helpful-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .edit-actions {
+        flex-direction: column;
+    }
+
+    .edit-actions button {
+        width: 100%;
+    }
+
+    .reviews-stats {
+        justify-content: center;
+    }
+
+    .restaurant-edit-info {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .review-card {
+        padding: 16px;
+    }
+
+    .restaurant-info {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .review-images {
+        justify-content: center;
+    }
+
+    .review-image {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.review-card {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Accessibility */
+.action-btn:focus-visible,
+.helpful-btn:focus-visible,
+.form-group textarea:focus-visible,
+.edit-actions button:focus-visible {
+    outline: 2px solid #ff4757;
+    outline-offset: 2px;
+}

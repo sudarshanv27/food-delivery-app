@@ -1,0 +1,466 @@
+/* src/pages/Dashboard.css */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ================= DASHBOARD CONTAINER ================= */
+
+.dashboard-container {
+  padding: 24px;
+  background: #f5f6fa;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+/* ================= HEADER ================= */
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.dashboard-header h1 {
+  font-size: 32px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.dashboard-header p {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+/* ================= HEADER BUTTONS ================= */
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-refresh,
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 18px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  font-weight: 600;
+
+  transition: all 0.3s ease;
+}
+
+.btn-refresh {
+  background: #ffffff;
+  color: #2c3e50;
+  border: 1px solid #ddd;
+}
+
+.btn-refresh:hover {
+  background: #f1f2f6;
+}
+
+.btn-export {
+  background: #2ed573;
+  color: white;
+}
+
+.btn-export:hover {
+  background: #26c466;
+}
+
+/* ================= STATS GRID ================= */
+
+.stats-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(260px, 1fr));
+
+  gap: 24px;
+
+  margin-bottom: 24px;
+}
+
+/* ================= STAT CARD ================= */
+
+.stat-card {
+  background: white;
+
+  border-radius: 16px;
+
+  padding: 22px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 18px;
+
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.05);
+
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* ================= ICON ================= */
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ================= STAT INFO ================= */
+
+.stat-info h3 {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 30px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.stat-change {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stat-change.positive {
+  color: #2ed573;
+}
+
+/* ================= GRID ================= */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+/* ================= CARD ================= */
+
+.dashboard-card {
+  background: white;
+
+  border-radius: 16px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* ================= CARD HEADER ================= */
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 20px 24px;
+
+  border-bottom: 1px solid #eee;
+
+  flex-wrap: wrap;
+
+  gap: 16px;
+}
+
+.card-header h2 {
+  font-size: 20px;
+  color: #2c3e50;
+}
+
+/* ================= FILTERS ================= */
+
+.card-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ================= SEARCH ================= */
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 14px;
+
+  border: 1px solid #ddd;
+
+  border-radius: 10px;
+
+  background: white;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  min-width: 180px;
+}
+
+/* ================= FILTER SELECT ================= */
+
+.filter-select {
+  padding: 10px 14px;
+
+  border: 1px solid #ddd;
+
+  border-radius: 10px;
+
+  background: white;
+
+  cursor: pointer;
+
+  outline: none;
+}
+
+/* ================= TABLE ================= */
+
+.orders-table {
+  overflow-x: auto;
+}
+
+.orders-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ================= TABLE HEADER ================= */
+
+.orders-table th {
+  text-align: left;
+
+  padding: 16px 24px;
+
+  background: #f8f9fa;
+
+  color: #7f8c8d;
+
+  font-weight: 600;
+
+  font-size: 14px;
+}
+
+/* ================= TABLE DATA ================= */
+
+.orders-table td {
+  padding: 16px 24px;
+
+  border-bottom: 1px solid #eee;
+
+  color: #2c3e50;
+
+  font-size: 14px;
+}
+
+.orders-table tr:hover {
+  background: #fafafa;
+}
+
+/* ================= ORDER ID ================= */
+
+.order-id {
+  font-weight: 700;
+  color: #ff4757;
+}
+
+/* ================= AMOUNT ================= */
+
+.amount {
+  font-weight: 700;
+}
+
+/* ================= STATUS BADGE ================= */
+
+.status-badge {
+  display: inline-block;
+
+  padding: 6px 12px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+/* ================= VIEW BUTTON ================= */
+
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 14px;
+
+  background: #f1f2f6;
+
+  border: none;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-weight: 500;
+
+  transition: all 0.3s ease;
+}
+
+.view-btn:hover {
+  background: #dfe4ea;
+}
+
+/* ================= MODAL ================= */
+
+.modal-overlay {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background:
+    rgba(0, 0, 0, 0.5);
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+
+  padding: 30px;
+
+  border-radius: 16px;
+
+  width: 90%;
+  max-width: 450px;
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.modal-content p {
+  margin-bottom: 12px;
+  color: #555;
+}
+
+/* ================= CLOSE BUTTON ================= */
+
+.close-btn {
+  margin-top: 20px;
+
+  width: 100%;
+
+  padding: 12px;
+
+  background: #ff4757;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  font-weight: 600;
+
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: #ff6b81;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+
+  .dashboard-container {
+    padding: 16px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-filters {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .search-box input {
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  .orders-table th,
+  .orders-table td {
+    padding: 12px;
+  }
+
+}

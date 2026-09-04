@@ -1,0 +1,146 @@
+/* Admin Dashboard Container */
+.admin-dashboard {
+    display: flex;
+    min-height: 100vh;
+    background: var(--admin-bg, #f5f7fa);
+}
+
+/* Dark Mode */
+.dark-mode .admin-dashboard {
+    --admin-bg: #121212;
+    --text-primary: #ffffff;
+    --text-secondary: #aaa;
+    --border-color: #333;
+    --card-bg: #1e1e1e;
+}
+
+/* Admin Main Content */
+.admin-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Admin Content */
+.admin-content {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* Dashboard Charts */
+.dashboard-charts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+/* Dashboard Tables */
+.dashboard-tables {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+}
+
+.recent-orders {
+    background: var(--card-bg, #ffffff);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.recent-orders h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--text-primary, #333);
+}
+
+/* Coming Soon Placeholder */
+.coming-soon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    background: var(--card-bg, #ffffff);
+    border-radius: 16px;
+    font-size: 20px;
+    color: var(--text-secondary, #666);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .dashboard-charts {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .dashboard-tables {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-content {
+        padding: 20px;
+    }
+
+    .recent-orders {
+        padding: 16px;
+        overflow-x: auto;
+    }
+
+    .recent-orders h3 {
+        font-size: 16px;
+    }
+
+    .coming-soon {
+        min-height: 300px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-content {
+        padding: 16px;
+    }
+
+    .dashboard-charts {
+        gap: 16px;
+    }
+
+    .dashboard-tables {
+        gap: 16px;
+    }
+
+    .recent-orders {
+        padding: 12px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dashboard-charts>*,
+.dashboard-tables>* {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Accessibility */
+.coming-soon:focus-visible {
+    outline: 2px solid #ff4757;
+    outline-offset: 2px;
+}

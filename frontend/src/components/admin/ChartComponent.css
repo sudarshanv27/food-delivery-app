@@ -1,0 +1,606 @@
+/* ChartComponent.css - Enhanced Version */
+
+.chart-component {
+    background: var(--chart-bg, #ffffff);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-component:hover {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Dark Theme */
+.chart-component.dark {
+    --chart-bg: #1a1a2e;
+    --text-color: #e0e0e0;
+    --border-color: #2d2d44;
+    background: #1a1a2e;
+    color: #e0e0e0;
+}
+
+.chart-component.dark .chart-title {
+    color: #e0e0e0;
+}
+
+.chart-component.dark .chart-label,
+.chart-component.dark .legend-label {
+    color: #b0b0b0;
+}
+
+/* Chart Header */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.chart-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.chart-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.stat-badge {
+    padding: 4px 10px;
+    background: #f5f5f5;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: #666;
+}
+
+.chart-body {
+    position: relative;
+    min-height: 200px;
+}
+
+/* Loading States */
+.chart-component.loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.chart-title-skeleton {
+    width: 150px;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 4px;
+}
+
+.chart-body-skeleton {
+    height: 200px;
+    background: #e0e0e0;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-wave {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    animation: wave 1.5s infinite;
+}
+
+@keyframes wave {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+/* Line Chart */
+.line-chart-container {
+    display: flex;
+    gap: 15px;
+    height: 100%;
+}
+
+.chart-y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #666;
+    min-width: 40px;
+    text-align: right;
+}
+
+.line-chart {
+    flex: 1;
+    position: relative;
+}
+
+.chart-svg {
+    width: 100%;
+    height: auto;
+    background: transparent;
+}
+
+.chart-line {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawLine 1s ease forwards;
+}
+
+@keyframes drawLine {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.chart-area {
+    animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.chart-dot {
+    transition: r 0.2s ease;
+    cursor: pointer;
+}
+
+.chart-dot:hover {
+    r: 4;
+    filter: drop-shadow(0 0 4px rgba(255, 71, 87, 0.5));
+}
+
+.chart-labels {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+}
+
+.chart-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-align: center;
+    flex: 1;
+}
+
+/* Bar Chart */
+.bar-chart-container {
+    display: flex;
+    gap: 15px;
+    height: 100%;
+}
+
+.bar-chart {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+    height: 200px;
+}
+
+.bar-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+}
+
+.bar-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-align: center;
+}
+
+.bar-container {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    background: #f5f5f5;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-fill {
+    width: 100%;
+    min-height: 2px;
+    border-radius: 8px 8px 0 0;
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    cursor: pointer;
+}
+
+.bar-fill:hover {
+    filter: brightness(1.1);
+}
+
+.bar-tooltip {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.bar-value {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Pie Chart */
+.pie-chart-container {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pie-chart {
+    width: 200px;
+    height: 200px;
+    position: relative;
+}
+
+.pie-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.pie-slice {
+    transition: transform 0.3s ease, filter 0.3s ease;
+    cursor: pointer;
+}
+
+.pie-slice:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+
+.pie-slice.selected {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.3));
+}
+
+.pie-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 150px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+}
+
+.legend-item:hover {
+    background: #f5f5f5;
+    transform: translateX(5px);
+}
+
+.legend-item.hovered {
+    background: #f5f5f5;
+    transform: translateX(5px);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.legend-label {
+    flex: 1;
+    font-size: 0.8rem;
+    color: #333;
+}
+
+.legend-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.legend-percent {
+    font-size: 0.7rem;
+    color: #666;
+}
+
+/* Doughnut Chart */
+.doughnut-chart-container {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.doughnut-chart {
+    width: 200px;
+    height: 200px;
+    position: relative;
+}
+
+.doughnut-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.doughnut-slice {
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.doughnut-slice:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+
+.doughnut-slice.selected {
+    transform: scale(1.05);
+}
+
+.doughnut-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.center-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.center-label {
+    font-size: 0.7rem;
+    color: #666;
+}
+
+.doughnut-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 150px;
+}
+
+/* Area Chart */
+.area-chart-container {
+    width: 100%;
+    height: 100%;
+}
+
+.area-svg {
+    width: 100%;
+    height: auto;
+}
+
+.area-polygon {
+    animation: fadeIn 1s ease;
+}
+
+.area-line {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawLine 1s ease forwards;
+}
+
+/* Radar Chart */
+.radar-chart-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.radar-svg {
+    width: 250px;
+    height: 250px;
+}
+
+.radar-polygon {
+    animation: fadeIn 0.5s ease;
+}
+
+.radar-labels {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.radar-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-align: center;
+}
+
+/* Mini Sparkline */
+.sparkline {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.sparkline-line {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    animation: drawLine 1s ease forwards;
+}
+
+/* Progress Circle */
+.progress-circle {
+    display: inline-block;
+}
+
+.progress-circle svg {
+    transform: rotate(-90deg);
+}
+
+.progress-circle circle {
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+/* No Data State */
+.no-data {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+    color: #999;
+    font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .chart-component {
+        padding: 15px;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pie-chart-container,
+    .doughnut-chart-container {
+        flex-direction: column;
+    }
+
+    .bar-chart {
+        gap: 8px;
+    }
+
+    .bar-label {
+        font-size: 0.6rem;
+    }
+
+    .legend-label,
+    .legend-value {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .bar-chart {
+        flex-direction: column;
+        align-items: stretch;
+        height: auto;
+    }
+
+    .bar-item {
+        flex-direction: row;
+        height: auto;
+    }
+
+    .bar-container {
+        height: 30px;
+    }
+
+    .bar-fill {
+        width: 0;
+        height: 100%;
+        transition: width 0.5s ease;
+    }
+
+    .chart-labels {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* Tooltip Animations */
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Print Styles */
+@media print {
+    .chart-component {
+        box-shadow: none;
+        break-inside: avoid;
+    }
+
+    .chart-component:hover {
+        transform: none;
+    }
+}

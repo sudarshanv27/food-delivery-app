@@ -1,0 +1,580 @@
+/* Orders Page Container */
+.orders-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+    min-height: calc(100vh - 200px);
+}
+
+/* Dark Mode */
+.dark-mode .orders-page {
+    --text-primary: #ffffff;
+    --text-secondary: #aaa;
+    --border-color: #333;
+    --card-bg: #2a2a2a;
+}
+
+/* Orders Header */
+.orders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.orders-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary, #333);
+}
+
+/* Orders Filters */
+.orders-filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    background: var(--card-bg, #f8f9fa);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    color: var(--text-primary, #333);
+}
+
+.filter-btn:hover {
+    background: rgba(255, 71, 87, 0.1);
+    border-color: #ff4757;
+}
+
+.filter-btn.active {
+    background: #ff4757;
+    color: white;
+    border-color: #ff4757;
+}
+
+/* Loading State */
+.orders-loading {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color, #e0e0e0);
+    border-top-color: #ff4757;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Empty State */
+.orders-empty {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.orders-empty h3 {
+    font-size: 20px;
+    margin: 0 0 8px 0;
+    color: var(--text-primary, #333);
+}
+
+.orders-empty p {
+    color: var(--text-secondary, #666);
+    margin-bottom: 24px;
+}
+
+/* Orders List */
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Order Card */
+.order-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.order-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Order Header */
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.order-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.order-id {
+    font-weight: 600;
+    color: var(--text-primary, #333);
+    font-size: 16px;
+}
+
+.order-date {
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.status-badge.delivered {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+}
+
+.status-badge.processing {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196f3;
+}
+
+.status-badge.cancelled {
+    background: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+}
+
+.status-badge.pending {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
+}
+
+.status-icon {
+    font-size: 12px;
+}
+
+/* Order Body */
+.order-body {
+    padding: 20px;
+}
+
+/* Restaurant Info */
+.restaurant-info {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.restaurant-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.restaurant-details h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: var(--text-primary, #333);
+}
+
+.restaurant-details p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+}
+
+/* Order Items */
+.order-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.order-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border-color, #e0e0e0);
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.item-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.item-details {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.item-name {
+    flex: 1;
+    color: var(--text-primary, #333);
+    font-size: 14px;
+}
+
+.item-quantity {
+    color: var(--text-secondary, #666);
+    font-size: 13px;
+}
+
+.item-price {
+    font-weight: 600;
+    color: var(--text-primary, #333);
+    font-size: 14px;
+}
+
+/* Order Total */
+.order-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    font-size: 16px;
+}
+
+.order-total strong {
+    font-size: 20px;
+    color: #ff4757;
+}
+
+/* Order Footer */
+.order-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    flex-wrap: wrap;
+}
+
+.footer-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.track-btn {
+    background: #2196f3;
+    color: white;
+}
+
+.track-btn:hover {
+    background: #1976d2;
+    transform: translateY(-2px);
+}
+
+.cancel-btn {
+    background: #f44336;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #d32f2f;
+    transform: translateY(-2px);
+}
+
+.reorder-btn {
+    background: #4caf50;
+    color: white;
+}
+
+.reorder-btn:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}
+
+.rate-btn {
+    background: #ff9800;
+    color: white;
+}
+
+.rate-btn:hover {
+    background: #f57c00;
+    transform: translateY(-2px);
+}
+
+.rated-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.review-text {
+    font-size: 13px;
+    color: var(--text-secondary, #666);
+    font-style: italic;
+}
+
+/* Rating Modal */
+.rating-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.rating-modal {
+    background: var(--card-bg, #ffffff);
+    border-radius: 20px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--text-primary, #333);
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-secondary, #666);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.restaurant-info-modal {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.restaurant-info-modal img {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.restaurant-info-modal h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: var(--text-primary, #333);
+}
+
+.restaurant-info-modal p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+}
+
+.rating-section,
+.review-section {
+    margin-bottom: 24px;
+}
+
+.rating-section label,
+.review-section label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--text-primary, #333);
+}
+
+.review-section textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    background: var(--input-bg, #ffffff);
+    color: var(--text-primary, #333);
+}
+
+.review-section textarea:focus {
+    outline: none;
+    border-color: #ff4757;
+    box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.modal-footer button {
+    flex: 1;
+}
+
+/* Dark Mode Adjustments */
+.dark-mode .order-card {
+    background: #2a2a2a;
+}
+
+.dark-mode .rating-modal {
+    background: #2a2a2a;
+}
+
+.dark-mode .review-section textarea {
+    background: #1e1e1e;
+    border-color: #444;
+    color: #fff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .orders-page {
+        padding: 20px;
+    }
+
+    .orders-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .orders-filters {
+        justify-content: center;
+    }
+
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .order-footer {
+        flex-direction: column;
+    }
+
+    .footer-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .rated-section {
+        justify-content: center;
+    }
+
+    .item-details {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .rating-modal {
+        margin: 20px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.order-card {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Accessibility */
+.filter-btn:focus-visible,
+.footer-btn:focus-visible,
+.close-modal:focus-visible,
+.review-section textarea:focus-visible {
+    outline: 2px solid #ff4757;
+    outline-offset: 2px;
+}

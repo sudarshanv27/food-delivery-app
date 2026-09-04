@@ -1,0 +1,1121 @@
+/* DeliveryStatus.css - Enhanced Version */
+
+.delivery-status-container {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+}
+
+/* Theme Support */
+.delivery-status-container.dark {
+    background: #1a1a1a;
+    color: #e0e0e0;
+}
+
+/* Loading State */
+.delivery-status-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+}
+
+.status-spinner {
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+.spinner-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid transparent;
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner-ring:nth-child(1) {
+    animation-delay: -0.45s;
+}
+
+.spinner-ring:nth-child(2) {
+    animation-delay: -0.3s;
+    border-top-color: rgba(255, 255, 255, 0.7);
+}
+
+.spinner-ring:nth-child(3) {
+    animation-delay: -0.15s;
+    border-top-color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error State */
+.delivery-status-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    background: #fff5f5;
+    border-radius: 20px;
+    padding: 40px;
+}
+
+.delivery-status-error.dark {
+    background: #2a1a1a;
+}
+
+.error-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.error-message {
+    color: #f44336;
+    font-size: 14px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.retry-btn {
+    padding: 10px 24px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.retry-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+/* Notification Toast */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.toast-content {
+    background: white;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #4caf50;
+    min-width: 300px;
+}
+
+.dark .toast-content {
+    background: #2a2a2a;
+    color: #e0e0e0;
+}
+
+.toast-icon {
+    font-size: 24px;
+}
+
+.toast-text {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.toast-message {
+    font-size: 12px;
+    color: #666;
+}
+
+.dark .toast-message {
+    color: #aaa;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    padding: 0 4px;
+}
+
+/* Status Banner */
+.status-banner {
+    position: relative;
+    padding: 32px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    overflow: hidden;
+}
+
+.banner-glow {
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.status-icon-wrapper {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+.status-icon {
+    font-size: 48px;
+}
+
+.status-info {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.status-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    color: white;
+}
+
+.status-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    margin: 4px 0;
+}
+
+.status-description {
+    font-size: 13px;
+    opacity: 0.9;
+    color: white;
+}
+
+.track-btn {
+    background: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.track-btn:hover {
+    transform: scale(1.05);
+}
+
+/* Progress Container */
+.progress-container {
+    padding: 24px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dark .progress-container {
+    background: #151515;
+    border-color: #2a2a2a;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.progress-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.dark .progress-title {
+    color: #e0e0e0;
+}
+
+.progress-percentage {
+    font-weight: 700;
+    color: #ff4757;
+}
+
+.progress-bar-wrapper {
+    position: relative;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.dark .progress-bar {
+    background: #2a2a2a;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    position: relative;
+    transition: width 0.5s ease;
+    background: linear-gradient(90deg, #ff4757, #ff6b81);
+}
+
+.progress-shimmer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.progress-milestones {
+    position: relative;
+    height: 20px;
+}
+
+.milestone {
+    position: absolute;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.milestone-dot {
+    width: 12px;
+    height: 12px;
+    background: #e0e0e0;
+    border: 2px solid white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.dark .milestone-dot {
+    border-color: #1a1a1a;
+}
+
+.milestone.active .milestone-dot {
+    background: #ff4757;
+    box-shadow: 0 0 0 4px rgba(255, 71, 87, 0.2);
+}
+
+.milestone-label {
+    font-size: 10px;
+    color: #999;
+    white-space: nowrap;
+}
+
+.milestone.active .milestone-label {
+    color: #ff4757;
+    font-weight: 600;
+}
+
+/* Delivery Partner Card */
+.delivery-partner-card {
+    padding: 20px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dark .delivery-partner-card {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+}
+
+.partner-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.partner-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.partner-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+}
+
+.partner-info {
+    flex: 1;
+}
+
+.partner-name {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.dark .partner-name {
+    color: #e0e0e0;
+}
+
+.partner-rating {
+    color: #ffc107;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.rating-value {
+    color: #666;
+    margin-left: 4px;
+    font-size: 12px;
+}
+
+.partner-vehicle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #666;
+}
+
+.contact-partner-btn {
+    padding: 8px 16px;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s ease;
+}
+
+.contact-partner-btn:hover {
+    transform: scale(1.05);
+}
+
+/* Status Timeline */
+.status-timeline {
+    padding: 24px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dark .status-timeline {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.timeline-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.dark .timeline-header h3 {
+    color: #e0e0e0;
+}
+
+.timeline-count {
+    font-size: 12px;
+    color: #999;
+}
+
+.timeline-items {
+    position: relative;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.timeline-marker {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.marker-icon {
+    font-size: 20px;
+}
+
+.marker-line {
+    position: absolute;
+    top: 40px;
+    left: 19px;
+    width: 2px;
+    height: calc(100% + 24px);
+    background: linear-gradient(to bottom, currentColor, #e0e0e0);
+}
+
+.dark .marker-line {
+    background: linear-gradient(to bottom, currentColor, #2a2a2a);
+}
+
+.timeline-item:last-child .marker-line {
+    display: none;
+}
+
+.timeline-content {
+    flex: 1;
+    padding-bottom: 8px;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.timeline-status {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.dark .timeline-status {
+    color: #e0e0e0;
+}
+
+.timeline-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.timeline-description {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.dark .timeline-description {
+    color: #aaa;
+}
+
+.timeline-location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #999;
+}
+
+.timeline-item.current .timeline-status {
+    color: #ff4757;
+}
+
+.timeline-item.latest .timeline-content {
+    animation: highlight 1s ease;
+}
+
+@keyframes highlight {
+    0% {
+        background: rgba(255, 71, 87, 0.1);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+/* ETA Card */
+.eta-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0 20px 20px;
+    border-radius: 16px;
+    color: white;
+}
+
+.eta-icon {
+    font-size: 32px;
+}
+
+.eta-info {
+    flex: 1;
+}
+
+.eta-label {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-bottom: 4px;
+}
+
+.eta-value {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.eta-range,
+.eta-distance {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+/* Instructions Card */
+.instructions-card {
+    padding: 20px;
+    background: #f8f9fa;
+    margin: 0 20px 20px;
+    border-radius: 16px;
+}
+
+.dark .instructions-card {
+    background: #151515;
+}
+
+.instructions-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.instructions-icon {
+    font-size: 20px;
+}
+
+.instructions-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.dark .instructions-title {
+    color: #e0e0e0;
+}
+
+.instructions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.instructions-list li {
+    padding: 8px 0;
+    font-size: 13px;
+    color: #666;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.dark .instructions-list li {
+    color: #aaa;
+    border-color: #2a2a2a;
+}
+
+.instructions-list li:last-child {
+    border-bottom: none;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    padding: 0 20px 20px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-size: 14px;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.contact-btn {
+    background: #2196f3;
+    color: white;
+}
+
+.support-btn {
+    background: #4caf50;
+    color: white;
+}
+
+.cancel-btn {
+    background: #f44336;
+    color: white;
+}
+
+/* Cancelled Info */
+.cancelled-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+    background: #fff5f5;
+    margin: 0 20px 20px;
+    border-radius: 16px;
+}
+
+.dark .cancelled-info {
+    background: #2a1a1a;
+}
+
+.cancelled-icon {
+    font-size: 48px;
+}
+
+.cancelled-text {
+    flex: 1;
+}
+
+.cancelled-title {
+    font-weight: 700;
+    font-size: 18px;
+    color: #f44336;
+    margin-bottom: 8px;
+}
+
+.cancelled-message {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.dark .cancelled-message {
+    color: #aaa;
+}
+
+.reorder-btn {
+    padding: 10px 20px;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s ease;
+}
+
+.reorder-btn:hover {
+    transform: scale(1.05);
+}
+
+/* Delivered Celebration */
+.delivered-celebration {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    margin: 0 20px 20px;
+    border-radius: 16px;
+    color: white;
+    animation: celebrate 0.5s ease;
+}
+
+@keyframes celebrate {
+    0% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.celebration-icon {
+    font-size: 48px;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.celebration-text {
+    flex: 1;
+}
+
+.celebration-title {
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.celebration-message {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
+.rate-order-btn {
+    padding: 8px 16px;
+    background: white;
+    color: #4caf50;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s ease;
+}
+
+.rate-order-btn:hover {
+    transform: scale(1.05);
+}
+
+/* Order Status Badge Component */
+.order-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.order-status-badge.small {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+.order-status-badge.medium {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.order-status-badge.large {
+    padding: 8px 16px;
+    font-size: 15px;
+}
+
+.order-status-badge.animated {
+    animation: badgePulse 2s infinite;
+}
+
+@keyframes badgePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.badge-icon {
+    font-size: 1.1em;
+}
+
+.badge-label {
+    color: white;
+}
+
+.badge-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent);
+    animation: pulseRing 1.5s ease-out infinite;
+}
+
+@keyframes pulseRing {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+/* Compact Status Component */
+.compact-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #f0f0f0;
+}
+
+.dark .compact-status {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+}
+
+.compact-status:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.compact-status-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+}
+
+.compact-status-info {
+    flex: 1;
+}
+
+.compact-status-label {
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: capitalize;
+    margin-bottom: 2px;
+}
+
+.dark .compact-status-label {
+    color: #e0e0e0;
+}
+
+.compact-status-eta {
+    font-size: 11px;
+    color: #999;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .delivery-status-container {
+        border-radius: 12px;
+    }
+
+    .status-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px;
+    }
+
+    .status-icon-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+
+    .status-icon {
+        font-size: 36px;
+    }
+
+    .status-value {
+        font-size: 20px;
+    }
+
+    .partner-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .partner-avatar {
+        width: 50px;
+        height: 50px;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .cancelled-info,
+    .delivered-celebration {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .timeline-item {
+        flex-direction: column;
+    }
+
+    .timeline-marker {
+        margin-bottom: 12px;
+    }
+
+    .marker-line {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .progress-milestones {
+        display: none;
+    }
+
+    .eta-card {
+        margin: 0 16px 16px;
+        padding: 16px;
+    }
+
+    .instructions-card {
+        margin: 0 16px 16px;
+    }
+
+    .action-buttons {
+        padding: 0 16px 16px;
+    }
+
+    .notification-toast {
+        left: 16px;
+        right: 16px;
+        top: 16px;
+    }
+
+    .toast-content {
+        width: calc(100vw - 32px);
+        min-width: auto;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .delivery-status-container:not(.light) {
+        background: #1a1a1a;
+    }
+}
+
+/* Print Styles */
+@media print {
+
+    .action-buttons,
+    .track-btn,
+    .contact-partner-btn,
+    .notification-toast {
+        display: none;
+    }
+
+    .status-banner {
+        break-inside: avoid;
+    }
+
+    .timeline-item {
+        break-inside: avoid;
+    }
+}

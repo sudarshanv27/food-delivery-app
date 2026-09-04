@@ -1,0 +1,476 @@
+/* ConfirmationDialog.css - Enhanced Version */
+
+.confirmation-dialog .modal-content {
+    animation: dialogSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.confirmation-dialog.leaving .modal-content {
+    animation: dialogSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dialogSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes dialogSlideOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+}
+
+.confirmation-content {
+    position: relative;
+    padding: 32px;
+    text-align: center;
+}
+
+/* Progress Bar */
+.confirmation-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #e1e5e9;
+    overflow: hidden;
+}
+
+.confirmation-progress .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff4757, #ff6b81);
+    transition: width 0.3s ease;
+    animation: progressPulse 1s infinite;
+}
+
+@keyframes progressPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Icon */
+.confirmation-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    position: relative;
+    animation: iconPop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes iconPop {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.icon-primary {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.icon-danger {
+    background: rgba(255, 71, 87, 0.1);
+    color: #ff4757;
+}
+
+.icon-success {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+}
+
+.icon-warning {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.icon-info {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196f3;
+}
+
+.title-icon {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 14px;
+    background: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Success Animation */
+.confirmation-success-animation {
+    margin-bottom: 20px;
+}
+
+.success-checkmark {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.check-icon {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    border-radius: 50%;
+    box-sizing: content-box;
+    border: 4px solid #4caf50;
+    animation: scaleCheckmark 0.5s ease;
+}
+
+@keyframes scaleCheckmark {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.check-icon .icon-line {
+    height: 5px;
+    background-color: #4caf50;
+    display: block;
+    border-radius: 2px;
+    position: absolute;
+    z-index: 10;
+}
+
+.check-icon .icon-line.line-tip {
+    top: 46px;
+    left: 14px;
+    width: 25px;
+    transform: rotate(45deg);
+    animation: iconLineTip 0.3s ease 0.3s forwards;
+    opacity: 0;
+}
+
+.check-icon .icon-line.line-long {
+    top: 38px;
+    right: 14px;
+    width: 47px;
+    transform: rotate(-45deg);
+    animation: iconLineLong 0.3s ease 0.3s forwards;
+    opacity: 0;
+}
+
+@keyframes iconLineTip {
+    from {
+        opacity: 0;
+        transform: rotate(45deg) scale(0);
+    }
+
+    to {
+        opacity: 1;
+        transform: rotate(45deg) scale(1);
+    }
+}
+
+@keyframes iconLineLong {
+    from {
+        opacity: 0;
+        transform: rotate(-45deg) scale(0);
+    }
+
+    to {
+        opacity: 1;
+        transform: rotate(-45deg) scale(1);
+    }
+}
+
+.check-icon .icon-circle {
+    top: -4px;
+    left: -4px;
+    z-index: 10;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    position: absolute;
+    box-sizing: content-box;
+    border: 4px solid rgba(76, 175, 80, 0.3);
+    animation: iconCircle 0.3s ease 0.2s forwards;
+    opacity: 0;
+}
+
+@keyframes iconCircle {
+    from {
+        opacity: 0;
+        transform: scale(0);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Title */
+.confirmation-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: #333;
+}
+
+/* Message */
+.confirmation-message {
+    font-size: 15px;
+    color: #666;
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+}
+
+.confirmation-detailed-message {
+    font-size: 13px;
+    color: #ff9800;
+    background: #fff3e0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin: 12px 0;
+    text-align: left;
+}
+
+.confirmation-additional-content {
+    margin: 16px 0;
+}
+
+.confirmation-success-message {
+    font-size: 14px;
+    color: #4caf50;
+    margin: 16px 0;
+    font-weight: 500;
+}
+
+/* Loading Message */
+.confirmation-loading-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.loading-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.loading-dots span {
+    width: 6px;
+    height: 6px;
+    background: #ff4757;
+    border-radius: 50%;
+    animation: loadingDot 1.4s infinite;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes loadingDot {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Actions */
+.confirmation-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.confirmation-actions.reverse {
+    flex-direction: row-reverse;
+}
+
+.confirmation-actions .cancel-btn,
+.confirmation-actions .confirm-btn {
+    min-width: 100px;
+    padding: 10px 20px;
+}
+
+/* Auto Close */
+.confirmation-auto-close {
+    font-size: 12px;
+    color: #999;
+    margin-top: 16px;
+    text-align: center;
+}
+
+/* Two Factor Content */
+.two-factor-content {
+    margin: 20px 0;
+}
+
+.two-factor-message {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.two-factor-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 16px;
+    text-align: center;
+    letter-spacing: 4px;
+    font-family: monospace;
+    margin-bottom: 12px;
+}
+
+.two-factor-input:focus {
+    outline: none;
+    border-color: #ff4757;
+}
+
+.resend-code-btn {
+    background: none;
+    border: none;
+    color: #ff4757;
+    cursor: pointer;
+    font-size: 13px;
+    text-decoration: underline;
+}
+
+.resend-code-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Success State Overrides */
+.confirmation-dialog.success .confirmation-icon {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .confirmation-content {
+        padding: 24px;
+    }
+
+    .confirmation-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+
+    .confirmation-title {
+        font-size: 18px;
+    }
+
+    .confirmation-message {
+        font-size: 14px;
+    }
+
+    .confirmation-actions {
+        flex-direction: column;
+    }
+
+    .confirmation-actions.reverse {
+        flex-direction: column;
+    }
+
+    .confirmation-actions .cancel-btn,
+    .confirmation-actions .confirm-btn {
+        width: 100%;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .confirmation-dialog .modal-content,
+    .confirmation-dialog.leaving .modal-content,
+    .confirmation-icon,
+    .success-checkmark,
+    .loading-dots span {
+        animation: none;
+    }
+
+    .confirmation-progress .progress-bar {
+        animation: none;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .confirmation-title {
+        color: #e0e0e0;
+    }
+
+    .confirmation-message {
+        color: #b0b0b0;
+    }
+
+    .confirmation-detailed-message {
+        background: rgba(255, 152, 0, 0.1);
+        color: #ffb74d;
+    }
+
+    .two-factor-input {
+        background: #2d2d44;
+        border-color: #3d3d5c;
+        color: white;
+    }
+}

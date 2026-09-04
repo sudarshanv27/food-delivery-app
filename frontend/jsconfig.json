@@ -1,0 +1,95 @@
+{
+    "compilerOptions": {
+        "baseUrl": "src",
+        "target": "ES2020",
+        "module": "commonjs",
+        "allowSyntheticDefaultImports": true,
+        "jsx": "react-jsx",
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "paths": {
+            "@components/*": [
+                "components/*"
+            ],
+            "@components/common/*": [
+                "components/common/*"
+            ],
+            "@components/layout/*": [
+                "components/layout/*"
+            ],
+            "@components/auth/*": [
+                "components/auth/*"
+            ],
+            "@components/user/*": [
+                "components/user/*"
+            ],
+            "@components/restaurant/*": [
+                "components/restaurant/*"
+            ],
+            "@components/cart/*": [
+                "components/cart/*"
+            ],
+            "@components/delivery/*": [
+                "components/delivery/*"
+            ],
+            "@components/admin/*": [
+                "components/admin/*"
+            ],
+            "@pages/*": [
+                "pages/*"
+            ],
+            "@pages/auth/*": [
+                "pages/auth/*"
+            ],
+            "@pages/user/*": [
+                "pages/user/*"
+            ],
+            "@pages/restaurant/*": [
+                "pages/restaurant/*"
+            ],
+            "@pages/cart/*": [
+                "pages/cart/*"
+            ],
+            "@pages/delivery/*": [
+                "pages/delivery/*"
+            ],
+            "@pages/admin/*": [
+                "pages/admin/*"
+            ],
+            "@hooks/*": [
+                "hooks/*"
+            ],
+            "@utils/*": [
+                "utils/*"
+            ],
+            "@services/*": [
+                "services/*"
+            ],
+            "@contexts/*": [
+                "contexts/*"
+            ],
+            "@styles/*": [
+                "styles/*"
+            ],
+            "@assets/*": [
+                "assets/*"
+            ],
+            "@config/*": [
+                "config/*"
+            ],
+            "@routes/*": [
+                "routes/*"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*",
+        "src/**/*.json"
+    ],
+    "exclude": [
+        "node_modules",
+        "build",
+        "coverage",
+        "public"
+    ]
+}

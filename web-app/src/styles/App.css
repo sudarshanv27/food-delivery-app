@@ -1,0 +1,243 @@
+/* ================= APP ================= */
+
+.app {
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+/* ================= NAVBAR ================= */
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    background: #ffffff;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+
+    padding: 1rem 2rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ================= LOGO ================= */
+
+.logo {
+    font-size: 1.6rem;
+    font-weight: 700;
+
+    color: #ff4757;
+
+    text-decoration: none;
+}
+
+/* ================= NAV LINKS ================= */
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.nav-links a {
+    font-size: 15px;
+    font-weight: 500;
+
+    color: #2c3e50;
+
+    text-decoration: none;
+
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #ff4757;
+}
+
+/* ================= CART ================= */
+
+.cart-icon {
+    position: relative;
+}
+
+.cart-count {
+    position: absolute;
+    top: -8px;
+    right: -12px;
+
+    min-width: 20px;
+    height: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #ff4757;
+    color: #ffffff;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    border-radius: 50%;
+}
+
+/* ================= HERO SECTION ================= */
+
+.hero-section {
+    padding: 5rem 2rem;
+
+    text-align: center;
+
+    background: linear-gradient(135deg,
+            #ff4757 0%,
+            #ff6b81 100%);
+
+    color: #ffffff;
+}
+
+.hero-section h1 {
+    margin-bottom: 1rem;
+
+    font-size: 3rem;
+    font-weight: 800;
+}
+
+.hero-section p {
+    max-width: 700px;
+    margin: 0 auto;
+
+    font-size: 1.1rem;
+    line-height: 1.6;
+
+    opacity: 0.95;
+}
+
+/* ================= RESTAURANTS GRID ================= */
+
+.restaurants-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+
+    padding: 2rem;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill,
+            minmax(320px, 1fr));
+    gap: 2rem;
+}
+
+/* ================= RESTAURANT CARD ================= */
+
+.restaurant-card {
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+
+    cursor: pointer;
+
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.restaurant-card:hover {
+    transform: translateY(-6px);
+
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ================= RESTAURANT IMAGE ================= */
+
+.restaurant-image {
+    width: 100%;
+    height: 220px;
+
+    object-fit: cover;
+}
+
+/* ================= RESTAURANT INFO ================= */
+
+.restaurant-info {
+    padding: 1rem 1.2rem;
+}
+
+.restaurant-name {
+    margin-bottom: 0.5rem;
+
+    font-size: 1.2rem;
+    font-weight: 700;
+
+    color: #2c3e50;
+}
+
+.restaurant-cuisine {
+    margin-bottom: 0.6rem;
+
+    font-size: 0.9rem;
+
+    color: #7f8c8d;
+}
+
+/* ================= DETAILS ================= */
+
+.restaurant-details {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-top: 0.8rem;
+
+    font-size: 14px;
+}
+
+.rating {
+    font-weight: 600;
+    color: #ffa502;
+}
+
+.delivery-time {
+    font-weight: 600;
+    color: #2ed573;
+}
+
+.delivery-fee {
+    font-weight: 600;
+    color: #ff4757;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+    .nav-container {
+        padding: 1rem;
+    }
+
+    .hero-section {
+        padding: 4rem 1rem;
+    }
+
+    .hero-section h1 {
+        font-size: 2.2rem;
+    }
+
+    .restaurants-grid {
+        padding: 1rem;
+        grid-template-columns: 1fr;
+    }
+
+    .nav-links {
+        gap: 1rem;
+    }
+}

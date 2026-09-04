@@ -1,0 +1,687 @@
+/* src/components/auth/Signup.css */
+
+/* ============================================
+   Main Container - Ensures Full Height Scrolling
+   ============================================ */
+.signup-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.signup-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* ============================================
+   Left Panel - Brand Section
+   ============================================ */
+.signup-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+}
+
+.signup-left::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1%, transparent 1%);
+    background-size: 50px 50px;
+    animation: moveBackground 20s linear infinite;
+}
+
+@keyframes moveBackground {
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(50px, 50px);
+    }
+}
+
+.signup-brand {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 1;
+}
+
+.brand-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    animation: bounce 2s ease infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.signup-brand h1 {
+    font-size: 2.5rem;
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.signup-brand p {
+    font-size: 1.2rem;
+    opacity: 0.95;
+    margin: 0 0 0.5rem;
+}
+
+.brand-tagline {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    display: block;
+}
+
+.signup-stats {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 320px;
+    margin-top: 2rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateX(10px);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.stat-icon {
+    font-size: 2rem;
+}
+
+.stat-item h4 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+}
+
+.stat-item p {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* ============================================
+   Right Panel - Form Section
+   ============================================ */
+.signup-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 30px 0 0 30px;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+.signup-card {
+    width: 100%;
+    max-width: 550px;
+    padding: 2rem 0;
+}
+
+.signup-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.signup-header h2 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin: 0 0 0.5rem;
+}
+
+.signup-header p {
+    color: #7f8c8d;
+    margin: 0;
+}
+
+/* ============================================
+   Form Styles
+   ============================================ */
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.required {
+    color: #e74c3c;
+    margin-left: 3px;
+}
+
+/* Input Wrapper */
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    font-size: 1.1rem;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 0.9rem 1rem 0.9rem 2.8rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.input-wrapper input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-wrapper input.error {
+    border-color: #e74c3c;
+}
+
+.input-validation {
+    position: absolute;
+    right: 1rem;
+    color: #4caf50;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+/* Password Toggle */
+.password-toggle {
+    position: absolute;
+    right: 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0;
+    color: #95a5a6;
+    transition: all 0.3s ease;
+}
+
+.password-toggle:hover {
+    color: #667eea;
+}
+
+/* Password Strength */
+.password-strength {
+    margin-top: 0.5rem;
+}
+
+.strength-bar {
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.strength-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.strength-label {
+    font-size: 0.7rem;
+}
+
+/* Password Match */
+.password-match {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.password-match.match {
+    color: #4caf50;
+}
+
+.password-match.mismatch {
+    color: #e74c3c;
+}
+
+/* Role Selection */
+.role-selection {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.role-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.role-option input {
+    display: none;
+}
+
+.role-card {
+    padding: 0.8rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: white;
+    cursor: pointer;
+}
+
+.role-option.selected .role-card {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea10, #764ba210);
+    transform: translateY(-2px);
+}
+
+.role-card:hover {
+    transform: translateY(-2px);
+    border-color: #667eea;
+}
+
+.role-icon {
+    font-size: 1.8rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.role-card h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.85rem;
+}
+
+.role-card p {
+    margin: 0;
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+
+/* Checkbox Label */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.checkbox-label input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.checkbox-label.error {
+    color: #e74c3c;
+}
+
+/* Error Messages */
+.error-message {
+    font-size: 0.75rem;
+    color: #e74c3c;
+}
+
+.submit-error {
+    background: #ffebee;
+    color: #e74c3c;
+    padding: 0.75rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.next-btn,
+.signup-btn,
+.back-btn {
+    padding: 0.85rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.next-btn,
+.signup-btn {
+    flex: 2;
+}
+
+.back-btn {
+    flex: 1;
+}
+
+/* Divider */
+.divider {
+    position: relative;
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: calc(50% - 80px);
+    height: 1px;
+    background: #e0e0e0;
+}
+
+.divider::before {
+    left: 0;
+}
+
+.divider::after {
+    right: 0;
+}
+
+.divider span {
+    background: white;
+    padding: 0 1rem;
+    color: #95a5a6;
+    font-size: 0.85rem;
+}
+
+/* Social Signup */
+.social-signup {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.social-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.social-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.social-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.social-btn.google {
+    color: #db4437;
+    border-color: #db4437;
+}
+
+.social-btn.google:hover {
+    background: #db4437;
+    color: white;
+}
+
+.social-btn.google:hover .social-icon path {
+    fill: white;
+}
+
+.social-btn.facebook {
+    color: #1877f2;
+    border-color: #1877f2;
+}
+
+.social-btn.facebook:hover {
+    background: #1877f2;
+    color: white;
+}
+
+.social-btn.facebook:hover .social-icon path {
+    fill: white;
+}
+
+/* Form Footer */
+.form-footer {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.form-footer p {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.login-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-link:hover {
+    text-decoration: underline;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 1024px) {
+    .signup-left {
+        padding: 2rem;
+    }
+
+    .brand-icon {
+        font-size: 4rem;
+    }
+
+    .signup-brand h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .signup-container {
+        flex-direction: column;
+    }
+
+    .signup-left {
+        min-height: auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .signup-stats {
+        display: flex;
+        gap: 1rem;
+        max-width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .stat-item {
+        flex: 1;
+        min-width: 140px;
+        margin-bottom: 0;
+    }
+
+    .signup-right {
+        border-radius: 30px 30px 0 0;
+        margin-top: -20px;
+        padding: 2rem 1.5rem;
+        min-height: auto;
+    }
+
+    .signup-card {
+        padding: 1rem 0;
+    }
+
+    .role-selection {
+        flex-direction: column;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .social-signup {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .signup-left {
+        padding: 1.5rem;
+    }
+
+    .signup-right {
+        padding: 1.5rem;
+    }
+
+    .signup-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .stat-item {
+        min-width: 100px;
+        padding: 0.8rem;
+    }
+
+    .stat-icon {
+        font-size: 1.5rem;
+    }
+
+    .stat-item h4 {
+        font-size: 0.85rem;
+    }
+
+    .stat-item p {
+        font-size: 0.7rem;
+    }
+
+    .role-card {
+        padding: 0.6rem;
+    }
+
+    .role-icon {
+        font-size: 1.5rem;
+    }
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.signup-card {
+    animation: fadeInUp 0.5s ease;
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Scrollbar Styling */
+.signup-right::-webkit-scrollbar {
+    width: 8px;
+}
+
+.signup-right::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.signup-right::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.signup-right::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

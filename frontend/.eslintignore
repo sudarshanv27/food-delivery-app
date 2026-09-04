@@ -1,0 +1,8 @@
+# frontend/.eslintignore
+src/components/common/ConfirmationDialog.js
+src/components/common/SearchBar.js
+src/components/layout/Navbar.js
+src/hooks/useAuth.js
+src/hooks/useCart.js
+src/hooks/useTheme.js
+src/pages/auth/ResetPasswordPage.jsx

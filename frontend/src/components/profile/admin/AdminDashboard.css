@@ -1,0 +1,415 @@
+/* Add to existing AdminAnalytics.css */
+
+/* ============================================
+   View Tabs
+   ============================================ */
+.view-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background: #F8F9FA;
+    padding: 0.25rem;
+    border-radius: 12px;
+}
+
+.view-tab {
+    padding: 0.5rem 1.25rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.view-tab.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.view-tab:hover:not(.active) {
+    background: #E0E0E0;
+}
+
+/* ============================================
+   Dashboard Layout
+   ============================================ */
+.dashboard-layout {
+    display: flex;
+    gap: 0.25rem;
+    background: #F8F9FA;
+    padding: 0.25rem;
+    border-radius: 8px;
+}
+
+.layout-btn {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.layout-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+/* ============================================
+   Custom Date Picker
+   ============================================ */
+.custom-date-picker {
+    padding: 0.5rem;
+    border: 2px solid #E0E0E0;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+}
+
+.react-datepicker-wrapper {
+    display: inline-block;
+}
+
+/* ============================================
+   Enhanced Stat Cards
+   ============================================ */
+.stat-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-trend-line {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 100px;
+    height: 50px;
+    opacity: 0.3;
+}
+
+.sparkline {
+    display: flex;
+    align-items: flex-end;
+    height: 100%;
+    gap: 2px;
+}
+
+.sparkline-bar {
+    flex: 1;
+    background: currentColor;
+    transition: height 0.3s ease;
+}
+
+/* ============================================
+   Growth Badge
+   ============================================ */
+.growth-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.growth-badge.positive {
+    background: #E8F5E9;
+    color: #4CAF50;
+}
+
+.growth-badge.negative {
+    background: #FFEBEE;
+    color: #F44336;
+}
+
+/* ============================================
+   Forecast Card
+   ============================================ */
+.forecast-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.forecast-card h3 {
+    color: white;
+}
+
+.forecast-insights {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.forecast-insights p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   Anomalies Alert
+   ============================================ */
+.anomalies-alert {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border-left: 4px solid #FF9800;
+}
+
+.alert-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.alert-icon {
+    font-size: 1.5rem;
+}
+
+.alert-header h3 {
+    margin: 0;
+    color: #FF9800;
+}
+
+.anomalies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.anomaly-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #F8F9FA;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.anomaly-item:hover {
+    transform: translateX(5px);
+}
+
+.anomaly-item.critical {
+    border-left: 3px solid #F44336;
+}
+
+.anomaly-item.high {
+    border-left: 3px solid #FF9800;
+}
+
+.anomaly-item.medium {
+    border-left: 3px solid #FFC107;
+}
+
+.anomaly-icon {
+    font-size: 1.5rem;
+}
+
+.anomaly-info {
+    flex: 1;
+}
+
+.anomaly-info p {
+    margin: 0;
+    font-weight: 500;
+}
+
+.anomaly-info small {
+    font-size: 0.75rem;
+    color: #95A5A6;
+}
+
+/* ============================================
+   Customer Insights Section
+   ============================================ */
+.customer-insights {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.insights-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.insights-header h3 {
+    font-size: 1.5rem;
+    color: #2C3E50;
+    margin-bottom: 0.5rem;
+}
+
+.insights-header p {
+    color: #7F8C8D;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+.insight-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+.insight-card h4 {
+    margin: 0 0 1rem 0;
+    color: #2C3E50;
+}
+
+/* ============================================
+   Notification Settings
+   ============================================ */
+.notification-settings {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.notification-settings h3 {
+    margin: 0 0 1.5rem 0;
+    color: #2C3E50;
+    text-align: center;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #F8F9FA;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.setting-item:hover {
+    background: #F0F0F0;
+    transform: translateX(5px);
+}
+
+.setting-item input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.setting-item span {
+    font-weight: 500;
+    color: #2C3E50;
+}
+
+/* ============================================
+   Export Button States
+   ============================================ */
+.export-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 1024px) {
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .view-tabs {
+        margin-top: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-title {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .view-tabs {
+        width: 100%;
+    }
+
+    .view-tab {
+        flex: 1;
+        text-align: center;
+    }
+
+    .dashboard-layout {
+        width: 100%;
+    }
+
+    .layout-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    .custom-date-picker {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .anomaly-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .insight-card {
+        padding: 1rem;
+    }
+
+    .notification-settings {
+        padding: 1rem;
+    }
+}
+
+/* ============================================
+   Print Styles Update
+   ============================================ */
+@media print {
+
+    .view-tabs,
+    .dashboard-layout,
+    .auto-refresh-toggle,
+    .export-buttons,
+    .comparison-toggle,
+    .anomalies-alert {
+        display: none;
+    }
+
+    .forecast-card {
+        background: white;
+        color: black;
+    }
+
+    .forecast-insights {
+        background: #F8F9FA;
+        color: black;
+    }
+}
