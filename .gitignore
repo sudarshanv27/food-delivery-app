@@ -52,3 +52,4 @@ backend/uploads/*
 # Local database files
 *.sqlite
 *.sqlite3
+*.db
