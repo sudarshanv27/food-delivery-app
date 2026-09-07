@@ -1,75 +1,213 @@
 // backend/controllers/auth.controller.js
-const bcrypt = require("bcryptjs");
+
 const { v4: uuidv4 } = require("uuid");
+const jwt = require("jsonwebtoken");
+
 const { pool } = require("../config/database");
+
 const {
     sendSuccess,
     sendError,
-    sendUnauthorized,
-    sendLoginSuccess,
     sendInternalError,
     sendNotFound
 } = require("../utils/responseHandler");
-const { generateToken, generateTokens } = require("../utils/generateToken");
-const { hashPassword, comparePassword, validatePasswordStrength, generateRandomPassword } = require("../utils/hashPassword");
 
-// ================= OTP STORAGE (In production, use Redis) =================
-const otpStore = new Map(); // { email: { otp, expiresAt, userData } }
+const {
+    hashPassword,
+    comparePassword,
+    validatePasswordStrength
+} = require("../utils/hashPassword");
 
-// ================= HELPER FUNCTIONS =================
+const { sendCustomEmail } = require("../services/emailService");
+
+// ============================================================
+// OTP STORAGE
+// ============================================================
+
+// Development/simple implementation.
+// For production, use Redis or another persistent OTP store.
+const otpStore = new Map();
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+
 const findUserByEmail = async (email) => {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    const result = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [email]
+    );
+
     return result.rows[0];
 };
 
 const findUserById = async (userId) => {
     const result = await pool.query(
-        "SELECT user_id, full_name, email, phone, user_type, is_verified, created_at FROM users WHERE user_id = $1",
+        `SELECT
+            user_id,
+            full_name,
+            email,
+            phone,
+            user_type,
+            avatar_url,
+            is_verified,
+            is_active,
+            created_at
+         FROM users
+         WHERE user_id = $1`,
         [userId]
     );
+
     return result.rows[0];
 };
 
 const updateUserPassword = async (userId, hashedPassword) => {
     await pool.query(
-        "UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2",
+        `UPDATE users
+         SET password_hash = $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $2`,
         [hashedPassword, userId]
     );
 };
 
-const verifyUserEmail = async (email) => {
-    await pool.query(
-        "UPDATE users SET is_verified = true, updated_at = CURRENT_TIMESTAMP WHERE email = $1",
-        [email]
-    );
-};
-
-// Generate 6-digit OTP
 const generateOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// ================= SEND OTP VIA EMAIL (DEVELOPMENT MODE) =================
-// Only ONE version of this function - remove any duplicates
+// ============================================================
+// SEND OTP EMAIL
+// ============================================================
+
 const sendOTPByEmail = async (email, otp) => {
-    // Just log OTP to console for development
-    console.log(`=================================`);
-    console.log(`📧 DEVELOPMENT MODE - EMAIL VERIFICATION`);
-    console.log(`To: ${email}`);
-    console.log(`OTP Code: ${otp}`);
-    console.log(`=================================`);
-    return true; // Always return success in development
+    const subject = "Food Delivery App - Email Verification OTP";
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Email Verification</title>
+        </head>
+
+        <body style="
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            font-family: Arial, Helvetica, sans-serif;
+        ">
+
+            <div style="
+                max-width: 600px;
+                margin: 0 auto;
+                background: #ffffff;
+                padding: 30px;
+                border-radius: 10px;
+            ">
+
+                <h2 style="margin-top: 0;">
+                    Food Delivery App
+                </h2>
+
+                <p>Hello,</p>
+
+                <p>
+                    Thank you for registering with Food Delivery App.
+                </p>
+
+                <p>
+                    Please use the following OTP to verify your email address:
+                </p>
+
+                <div style="
+                    text-align: center;
+                    margin: 30px 0;
+                ">
+
+                    <span style="
+                        display: inline-block;
+                        font-size: 32px;
+                        font-weight: bold;
+                        letter-spacing: 8px;
+                        padding: 15px 25px;
+                        background: #f2f2f2;
+                        border-radius: 8px;
+                    ">
+                        ${otp}
+                    </span>
+
+                </div>
+
+                <p>
+                    This OTP is valid for <strong>10 minutes</strong>.
+                </p>
+
+                <p>
+                    If you did not request this verification code,
+                    you can safely ignore this email.
+                </p>
+
+                <hr style="
+                    border: none;
+                    border-top: 1px solid #ddd;
+                    margin: 30px 0;
+                ">
+
+                <p style="
+                    font-size: 12px;
+                    color: #777;
+                ">
+                    Food Delivery App Team
+                </p>
+
+            </div>
+
+        </body>
+        </html>
+    `;
+
+    const sent = await sendCustomEmail(
+        email,
+        subject,
+        html
+    );
+
+    if (!sent) {
+        throw new Error("Failed to send OTP email");
+    }
+
+    console.log(`OTP email sent successfully to ${email}`);
+
+    return true;
 };
 
-// ================= 1. SEND OTP FOR SIGNUP =================
+// ============================================================
+// 1. SEND SIGNUP OTP
+// POST /api/auth/send-otp
+// ============================================================
+
 const sendSignupOTP = async (req, res) => {
     try {
-        const { full_name, email, phone, password, user_type = "customer" } = req.body;
+        const {
+            full_name,
+            email,
+            phone,
+            password,
+            user_type = "customer"
+        } = req.body;
 
-        console.log('========================================');
-        console.log('Signup OTP Request:', { full_name, email, phone, user_type });
+        console.log("========================================");
+        console.log("Signup OTP Request:", {
+            full_name,
+            email,
+            phone,
+            user_type
+        });
 
+        // ----------------------------------------------------
         // Validation
+        // ----------------------------------------------------
+
         if (!full_name || !email || !phone || !password) {
             return res.status(400).json({
                 success: false,
@@ -77,25 +215,29 @@ const sendSignupOTP = async (req, res) => {
             });
         }
 
-        // Validate email format
+        const normalizedEmail = email.trim().toLowerCase();
+
+        // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+
+        if (!emailRegex.test(normalizedEmail)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid email format"
             });
         }
 
-        // Validate phone format (10 digits)
+        // Phone validation
         const phoneRegex = /^[0-9]{10}$/;
+
         if (!phoneRegex.test(phone)) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid phone number (10 digits required)"
+                message: "Invalid phone number. 10 digits required."
             });
         }
 
-        // Validate password length
+        // Password validation
         if (password.length < 6) {
             return res.status(400).json({
                 success: false,
@@ -103,8 +245,28 @@ const sendSignupOTP = async (req, res) => {
             });
         }
 
-        // Check if user already exists
-        const existingUser = await findUserByEmail(email);
+        // Allowed user types
+        const allowedUserTypes = [
+            "customer",
+            "restaurant_owner",
+            "delivery_partner"
+        ];
+
+        if (!allowedUserTypes.includes(user_type)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user type"
+            });
+        }
+
+        // ----------------------------------------------------
+        // Check existing user
+        // ----------------------------------------------------
+
+        const existingUser = await findUserByEmail(
+            normalizedEmail
+        );
+
         if (existingUser) {
             return res.status(409).json({
                 success: false,
@@ -112,55 +274,75 @@ const sendSignupOTP = async (req, res) => {
             });
         }
 
+        // ----------------------------------------------------
         // Generate OTP
-        const otp = generateOTP();
-        const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+        // ----------------------------------------------------
 
+        const otp = generateOTP();
+
+        const expiresAt = Date.now() + 10 * 60 * 1000;
+
+        // ----------------------------------------------------
         // Hash password
+        // ----------------------------------------------------
+
         const hashedPassword = await hashPassword(password);
 
-        // Store OTP and user data
-        otpStore.set(email, {
+        // ----------------------------------------------------
+        // Store OTP
+        // ----------------------------------------------------
+
+        otpStore.set(normalizedEmail, {
             otp,
             expiresAt,
             userData: {
-                full_name,
-                email,
+                full_name: full_name.trim(),
+                email: normalizedEmail,
                 phone,
                 password: hashedPassword,
                 user_type
             }
         });
 
-        console.log(`✅ OTP Generated for ${email}: ${otp}`);
+        console.log("Signup OTP generated.");
 
-        // Send OTP (logs to console in development)
-        await sendOTPByEmail(email, otp);
+        // ----------------------------------------------------
+        // Send email
+        // ----------------------------------------------------
+
+        await sendOTPByEmail(
+            normalizedEmail,
+            otp
+        );
 
         return res.status(200).json({
             success: true,
             message: "OTP sent successfully",
             data: {
-                email,
+                email: normalizedEmail,
                 expiresIn: "10 minutes"
             }
         });
 
     } catch (error) {
+
         console.error("Send OTP Error:", error);
+
         return res.status(500).json({
             success: false,
-            message: "Failed to send OTP: " + error.message
+            message: "Failed to send OTP"
         });
     }
 };
 
-// ================= 2. VERIFY OTP & COMPLETE SIGNUP =================
+// ============================================================
+// 2. VERIFY OTP AND COMPLETE SIGNUP
+// POST /api/auth/verify-otp
+// ============================================================
+
 const verifyOTPAndSignup = async (req, res) => {
     try {
         const { email, otp } = req.body;
-
-        console.log('Verify OTP Request:', { email, otp });
 
         if (!email || !otp) {
             return res.status(400).json({
@@ -169,8 +351,9 @@ const verifyOTPAndSignup = async (req, res) => {
             });
         }
 
-        // Get stored OTP data
-        const storedData = otpStore.get(email);
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const storedData = otpStore.get(normalizedEmail);
 
         if (!storedData) {
             return res.status(404).json({
@@ -179,44 +362,103 @@ const verifyOTPAndSignup = async (req, res) => {
             });
         }
 
-        // Check if OTP expired
+        // ----------------------------------------------------
+        // Check expiry
+        // ----------------------------------------------------
+
         if (Date.now() > storedData.expiresAt) {
-            otpStore.delete(email);
+
+            otpStore.delete(normalizedEmail);
+
             return res.status(400).json({
                 success: false,
                 message: "OTP has expired. Please request a new OTP."
             });
         }
 
-        // Verify OTP
-        if (storedData.otp !== otp) {
+        // ----------------------------------------------------
+        // Check OTP
+        // ----------------------------------------------------
+
+        if (storedData.otp !== String(otp).trim()) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid OTP. Please try again."
             });
         }
 
-        // Create user in database
-        const userId = uuidv4();
         const { userData } = storedData;
 
+        // ----------------------------------------------------
+        // Double-check email
+        // ----------------------------------------------------
+
+        const existingUser = await findUserByEmail(
+            userData.email
+        );
+
+        if (existingUser) {
+            otpStore.delete(normalizedEmail);
+
+            return res.status(409).json({
+                success: false,
+                message: "Email is already registered."
+            });
+        }
+
+        // ----------------------------------------------------
+        // Create user
+        // ----------------------------------------------------
+
+        const userId = uuidv4();
+
         await pool.query(
-            `INSERT INTO users (user_id, full_name, email, phone, password_hash, user_type, is_verified, is_active) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [userId, userData.full_name, userData.email, userData.phone, userData.password, userData.user_type, true, true]
+            `INSERT INTO users (
+                user_id,
+                full_name,
+                email,
+                phone,
+                password_hash,
+                user_type,
+                is_verified,
+                is_active
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+                userId,
+                userData.full_name,
+                userData.email,
+                userData.phone,
+                userData.password,
+                userData.user_type,
+                true,
+                true
+            ]
         );
 
-        // Clear OTP from store
-        otpStore.delete(email);
+        // ----------------------------------------------------
+        // Remove OTP
+        // ----------------------------------------------------
 
-        // Generate token
-        const token = require('jsonwebtoken').sign(
-            { user_id: userId, email: userData.email, user_type: userData.user_type },
-            process.env.JWT_SECRET || 'your_secret_key',
-            { expiresIn: '7d' }
+        otpStore.delete(normalizedEmail);
+
+        // ----------------------------------------------------
+        // Generate JWT
+        // ----------------------------------------------------
+
+        const token = jwt.sign(
+            {
+                user_id: userId,
+                email: userData.email,
+                user_type: userData.user_type
+            },
+            process.env.JWT_SECRET || "your_secret_key",
+            {
+                expiresIn: process.env.JWT_EXPIRES_IN || "7d"
+            }
         );
 
-        console.log('✅ User created and OTP verified successfully');
+        console.log("User created successfully.");
 
         return res.status(201).json({
             success: true,
@@ -235,59 +477,96 @@ const verifyOTPAndSignup = async (req, res) => {
         });
 
     } catch (error) {
+
         console.error("Verify OTP Error:", error);
+
         return res.status(500).json({
             success: false,
-            message: "Failed to verify OTP: " + error.message
+            message: "Failed to verify OTP"
         });
     }
 };
 
-// ================= 3. RESEND OTP =================
+// ============================================================
+// 3. RESEND OTP
+// POST /api/auth/resend-otp
+// ============================================================
+
 const resendOTP = async (req, res) => {
     try {
         const { email } = req.body;
 
         if (!email) {
-            return sendError(res, "Email is required", 400);
+            return sendError(
+                res,
+                "Email is required",
+                400
+            );
         }
 
-        const storedData = otpStore.get(email);
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const storedData = otpStore.get(normalizedEmail);
 
         if (!storedData) {
-            return sendError(res, "No pending registration found. Please start over.", 404);
+            return sendError(
+                res,
+                "No pending registration found. Please start over.",
+                404
+            );
         }
 
         // Generate new OTP
         const newOTP = generateOTP();
+
         const expiresAt = Date.now() + 10 * 60 * 1000;
 
-        // Update stored data
         storedData.otp = newOTP;
         storedData.expiresAt = expiresAt;
-        otpStore.set(email, storedData);
 
-        // Send new OTP
-        await sendOTPByEmail(email, newOTP);
+        otpStore.set(
+            normalizedEmail,
+            storedData
+        );
 
-        return sendSuccess(res, {
-            email,
-            message: "New OTP sent successfully",
-            expiresIn: "10 minutes"
-        }, "OTP resent successfully");
+        await sendOTPByEmail(
+            normalizedEmail,
+            newOTP
+        );
+
+        return sendSuccess(
+            res,
+            {
+                email: normalizedEmail,
+                expiresIn: "10 minutes"
+            },
+            "OTP resent successfully"
+        );
 
     } catch (error) {
-        console.error("Resend OTP Error:", error.message);
-        return sendInternalError(res, "Failed to resend OTP", error);
+
+        console.error(
+            "Resend OTP Error:",
+            error.message
+        );
+
+        return sendInternalError(
+            res,
+            "Failed to resend OTP",
+            error
+        );
     }
 };
 
-// ================= 4. LOGIN =================
+// ============================================================
+// 4. LOGIN
+// POST /api/auth/login
+// ============================================================
+
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
 
-        console.log('Login attempt for email:', email);
+        const { email, password } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({
@@ -296,7 +575,11 @@ const login = async (req, res) => {
             });
         }
 
-        const user = await findUserByEmail(email);
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const user = await findUserByEmail(
+            normalizedEmail
+        );
 
         if (!user) {
             return res.status(404).json({
@@ -305,7 +588,25 @@ const login = async (req, res) => {
             });
         }
 
-        const isPasswordValid = await comparePassword(password, user.password_hash);
+        // ----------------------------------------------------
+        // Check account status
+        // ----------------------------------------------------
+
+        if (user.is_active === false) {
+            return res.status(403).json({
+                success: false,
+                message: "Your account is currently inactive."
+            });
+        }
+
+        // ----------------------------------------------------
+        // Compare password
+        // ----------------------------------------------------
+
+        const isPasswordValid = await comparePassword(
+            password,
+            user.password_hash
+        );
 
         if (!isPasswordValid) {
             return res.status(401).json({
@@ -314,6 +615,10 @@ const login = async (req, res) => {
             });
         }
 
+        // ----------------------------------------------------
+        // Verify email
+        // ----------------------------------------------------
+
         if (user.is_verified === false) {
             return res.status(403).json({
                 success: false,
@@ -321,16 +626,26 @@ const login = async (req, res) => {
             });
         }
 
-        const token = require('jsonwebtoken').sign(
-            { user_id: user.user_id, email: user.email, user_type: user.user_type },
-            process.env.JWT_SECRET || 'your_secret_key',
-            { expiresIn: '7d' }
+        // ----------------------------------------------------
+        // Generate JWT
+        // ----------------------------------------------------
+
+        const token = jwt.sign(
+            {
+                user_id: user.user_id,
+                email: user.email,
+                user_type: user.user_type
+            },
+            process.env.JWT_SECRET || "your_secret_key",
+            {
+                expiresIn: process.env.JWT_EXPIRES_IN || "7d"
+            }
         );
 
         return res.status(200).json({
             success: true,
             message: "Login successful",
-            token: token,
+            token,
             user: {
                 id: user.user_id,
                 name: user.full_name,
@@ -342,191 +657,451 @@ const login = async (req, res) => {
         });
 
     } catch (error) {
+
         console.error("Login Error:", error);
+
         return res.status(500).json({
             success: false,
-            message: "Login failed: " + error.message
+            message: "Login failed"
         });
     }
 };
 
-// ================= 5. FORGOT PASSWORD - SEND OTP =================
+// ============================================================
+// 5. FORGOT PASSWORD - SEND OTP
+// POST /api/auth/forgot-password
+// ============================================================
+
 const forgotPasswordSendOTP = async (req, res) => {
     try {
+
         const { email } = req.body;
 
         if (!email) {
-            return sendError(res, "Email is required", 400);
+            return sendError(
+                res,
+                "Email is required",
+                400
+            );
         }
 
-        const user = await findUserByEmail(email);
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const user = await findUserByEmail(
+            normalizedEmail
+        );
+
         if (!user) {
-            return sendNotFound(res, "No account found with this email");
+            return sendNotFound(
+                res,
+                "No account found with this email"
+            );
         }
 
         const otp = generateOTP();
+
         const expiresAt = Date.now() + 10 * 60 * 1000;
 
-        otpStore.set(`reset_${email}`, {
-            otp,
-            expiresAt,
-            userId: user.user_id
-        });
+        otpStore.set(
+            `reset_${normalizedEmail}`,
+            {
+                otp,
+                expiresAt,
+                userId: user.user_id
+            }
+        );
 
-        await sendOTPByEmail(email, otp);
+        await sendOTPByEmail(
+            normalizedEmail,
+            otp
+        );
 
-        return sendSuccess(res, {
-            email,
-            message: "Password reset OTP sent to your email",
-            expiresIn: "10 minutes"
-        }, "OTP sent successfully");
+        return sendSuccess(
+            res,
+            {
+                email: normalizedEmail,
+                expiresIn: "10 minutes"
+            },
+            "Password reset OTP sent successfully"
+        );
 
     } catch (error) {
-        console.error("Forgot Password OTP Error:", error.message);
-        return sendInternalError(res, "Failed to send OTP", error);
+
+        console.error(
+            "Forgot Password OTP Error:",
+            error.message
+        );
+
+        return sendInternalError(
+            res,
+            "Failed to send OTP",
+            error
+        );
     }
 };
 
-// ================= 6. VERIFY OTP & RESET PASSWORD =================
+// ============================================================
+// 6. VERIFY OTP AND RESET PASSWORD
+// POST /api/auth/reset-password
+// ============================================================
+
 const verifyOTPAndResetPassword = async (req, res) => {
     try {
-        const { email, otp, newPassword } = req.body;
+
+        const {
+            email,
+            otp,
+            newPassword
+        } = req.body;
 
         if (!email || !otp || !newPassword) {
-            return sendError(res, "Email, OTP, and new password are required", 400);
+            return sendError(
+                res,
+                "Email, OTP, and new password are required",
+                400
+            );
         }
 
-        const { isValid, errors } = validatePasswordStrength(newPassword);
+        // Password validation
+        const {
+            isValid,
+            errors
+        } = validatePasswordStrength(newPassword);
+
         if (!isValid) {
-            return sendError(res, "Password validation failed", 400, errors);
+            return sendError(
+                res,
+                "Password validation failed",
+                400,
+                errors
+            );
         }
 
-        const storedData = otpStore.get(`reset_${email}`);
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const storedData = otpStore.get(
+            `reset_${normalizedEmail}`
+        );
 
         if (!storedData) {
-            return sendError(res, "No OTP request found. Please request a new OTP.", 404);
+            return sendError(
+                res,
+                "No OTP request found. Please request a new OTP.",
+                404
+            );
         }
 
+        // Check expiry
         if (Date.now() > storedData.expiresAt) {
-            otpStore.delete(`reset_${email}`);
-            return sendError(res, "OTP has expired. Please request a new OTP.", 400);
+
+            otpStore.delete(
+                `reset_${normalizedEmail}`
+            );
+
+            return sendError(
+                res,
+                "OTP has expired. Please request a new OTP.",
+                400
+            );
         }
 
-        if (storedData.otp !== otp) {
-            return sendError(res, "Invalid OTP. Please try again.", 400);
+        // Verify OTP
+        if (storedData.otp !== String(otp).trim()) {
+            return sendError(
+                res,
+                "Invalid OTP. Please try again.",
+                400
+            );
         }
 
-        const hashedPassword = await hashPassword(newPassword);
-        await updateUserPassword(storedData.userId, hashedPassword);
+        // Hash new password
+        const hashedPassword =
+            await hashPassword(newPassword);
 
-        otpStore.delete(`reset_${email}`);
+        // Update password
+        await updateUserPassword(
+            storedData.userId,
+            hashedPassword
+        );
 
-        return sendSuccess(res, null, "Password reset successfully. You can now login with your new password.");
+        // Remove OTP
+        otpStore.delete(
+            `reset_${normalizedEmail}`
+        );
+
+        return sendSuccess(
+            res,
+            null,
+            "Password reset successfully. You can now login with your new password."
+        );
 
     } catch (error) {
-        console.error("Reset Password Error:", error.message);
-        return sendInternalError(res, "Failed to reset password", error);
+
+        console.error(
+            "Reset Password Error:",
+            error.message
+        );
+
+        return sendInternalError(
+            res,
+            "Failed to reset password",
+            error
+        );
     }
 };
 
-// ================= 7. GET PROFILE =================
+// ============================================================
+// 7. GET PROFILE
+// GET /api/auth/profile
+// ============================================================
+
 const getProfile = async (req, res) => {
     try {
-        const user = await findUserById(req.user.userId);
+
+        const user = await findUserById(
+            req.user.userId
+        );
 
         if (!user) {
-            return sendNotFound(res, "User not found");
+            return sendNotFound(
+                res,
+                "User not found"
+            );
         }
 
-        return sendSuccess(res, user, "Profile fetched successfully");
+        return sendSuccess(
+            res,
+            user,
+            "Profile fetched successfully"
+        );
 
     } catch (error) {
-        console.error("Profile Error:", error.message);
-        return sendInternalError(res, "Failed to fetch profile", error);
+
+        console.error(
+            "Profile Error:",
+            error.message
+        );
+
+        return sendInternalError(
+            res,
+            "Failed to fetch profile",
+            error
+        );
     }
 };
 
-// ================= 8. UPDATE PROFILE =================
+// ============================================================
+// 8. UPDATE PROFILE
+// PUT /api/auth/profile
+// ============================================================
+
 const updateProfile = async (req, res) => {
     try {
+
         const { userId } = req.user;
-        const { full_name, phone, avatar_url } = req.body;
+
+        const {
+            full_name,
+            phone,
+            avatar_url
+        } = req.body;
+
+        // Validate phone if supplied
+        if (
+            phone !== undefined &&
+            phone !== null &&
+            !/^[0-9]{10}$/.test(phone)
+        ) {
+            return sendError(
+                res,
+                "Invalid phone number. 10 digits required.",
+                400
+            );
+        }
 
         const result = await pool.query(
-            `UPDATE users 
-             SET full_name = COALESCE($1, full_name),
-                 phone = COALESCE($2, phone),
-                 avatar_url = COALESCE($3, avatar_url),
-                 updated_at = CURRENT_TIMESTAMP
+            `UPDATE users
+             SET
+                full_name = COALESCE($1, full_name),
+                phone = COALESCE($2, phone),
+                avatar_url = COALESCE($3, avatar_url),
+                updated_at = CURRENT_TIMESTAMP
              WHERE user_id = $4
-             RETURNING user_id, full_name, email, phone, user_type, avatar_url, is_verified`,
-            [full_name, phone, avatar_url, userId]
+             RETURNING
+                user_id,
+                full_name,
+                email,
+                phone,
+                user_type,
+                avatar_url,
+                is_verified,
+                is_active`,
+            [
+                full_name,
+                phone,
+                avatar_url,
+                userId
+            ]
         );
 
         if (result.rows.length === 0) {
-            return sendNotFound(res, "User not found");
+            return sendNotFound(
+                res,
+                "User not found"
+            );
         }
 
-        return sendSuccess(res, result.rows[0], "Profile updated successfully");
+        return sendSuccess(
+            res,
+            result.rows[0],
+            "Profile updated successfully"
+        );
 
     } catch (error) {
-        console.error("Update Profile Error:", error.message);
-        return sendInternalError(res, "Failed to update profile", error);
+
+        console.error(
+            "Update Profile Error:",
+            error.message
+        );
+
+        return sendInternalError(
+            res,
+            "Failed to update profile",
+            error
+        );
     }
 };
 
-// ================= 9. CHANGE PASSWORD =================
+// ============================================================
+// 9. CHANGE PASSWORD
+// POST /api/auth/change-password
+// ============================================================
+
 const changePassword = async (req, res) => {
     try {
-        const { userId } = req.user;
-        const { currentPassword, newPassword } = req.body;
+
+        const {
+            currentPassword,
+            newPassword
+        } = req.body;
 
         if (!currentPassword || !newPassword) {
-            return sendError(res, "Current password and new password are required", 400);
+            return sendError(
+                res,
+                "Current password and new password are required",
+                400
+            );
         }
 
         const userResult = await pool.query(
-            "SELECT password_hash FROM users WHERE user_id = $1",
-            [userId]
+            `SELECT password_hash
+             FROM users
+             WHERE user_id = $1`,
+            [req.user.userId]
         );
 
         if (userResult.rows.length === 0) {
-            return sendNotFound(res, "User not found");
+            return sendNotFound(
+                res,
+                "User not found"
+            );
         }
 
-        const isMatch = await comparePassword(currentPassword, userResult.rows[0].password_hash);
+        // Check current password
+        const isMatch = await comparePassword(
+            currentPassword,
+            userResult.rows[0].password_hash
+        );
+
         if (!isMatch) {
-            return sendError(res, "Current password is incorrect", 401);
+            return sendError(
+                res,
+                "Current password is incorrect",
+                401
+            );
         }
 
-        const { isValid, errors } = validatePasswordStrength(newPassword);
+        // Validate new password
+        const {
+            isValid,
+            errors
+        } = validatePasswordStrength(newPassword);
+
         if (!isValid) {
-            return sendError(res, "Password validation failed", 400, errors);
+            return sendError(
+                res,
+                "Password validation failed",
+                400,
+                errors
+            );
         }
 
-        const hashedPassword = await hashPassword(newPassword);
-        await updateUserPassword(userId, hashedPassword);
+        // Hash and update
+        const hashedPassword =
+            await hashPassword(newPassword);
 
-        return sendSuccess(res, null, "Password changed successfully");
+        await updateUserPassword(
+            req.user.userId,
+            hashedPassword
+        );
+
+        return sendSuccess(
+            res,
+            null,
+            "Password changed successfully"
+        );
 
     } catch (error) {
-        console.error("Change Password Error:", error.message);
-        return sendInternalError(res, "Failed to change password", error);
+
+        console.error(
+            "Change Password Error:",
+            error.message
+        );
+
+        return sendInternalError(
+            res,
+            "Failed to change password",
+            error
+        );
     }
 };
 
-// ================= 10. LOGOUT =================
+// ============================================================
+// 10. LOGOUT
+// POST /api/auth/logout
+// ============================================================
+
 const logout = async (req, res) => {
     try {
-        return sendSuccess(res, null, "Logged out successfully");
+
+        // JWT is stateless.
+        // Client should remove the stored token.
+
+        return sendSuccess(
+            res,
+            null,
+            "Logged out successfully"
+        );
 
     } catch (error) {
-        console.error("Logout Error:", error.message);
-        return sendInternalError(res, "Failed to logout", error);
+
+        console.error(
+            "Logout Error:",
+            error.message
+        );
+
+        return sendInternalError(
+            res,
+            "Failed to logout",
+            error
+        );
     }
 };
 
-// ================= EXPORTS =================
+// ============================================================
+// EXPORTS
+// ============================================================
+
 module.exports = {
     sendSignupOTP,
     verifyOTPAndSignup,

@@ -11,8 +11,7 @@ const isAdmin = (
         if (!req.user) {
             return res.status(401).json({
                 success: false,
-                message:
-                    "Unauthorized access",
+                message: "Unauthorized access",
             });
         }
 
@@ -29,13 +28,13 @@ const isAdmin = (
         ) {
             return res.status(403).json({
                 success: false,
-                message:
-                    "Access denied. Admins only.",
+                message: "Access denied. Admins only.",
             });
         }
 
         // ================= NEXT =================
         next();
+
     } catch (error) {
         console.error(
             "Admin Middleware Error:",
@@ -44,12 +43,12 @@ const isAdmin = (
 
         return res.status(500).json({
             success: false,
-            message:
-                "Internal server error",
+            message: "Internal server error",
         });
     }
 };
 
+// ================= EXPORT =================
 module.exports = {
     isAdmin,
 };

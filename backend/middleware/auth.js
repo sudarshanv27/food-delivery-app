@@ -41,7 +41,11 @@ const authenticate = (
             );
 
         // ================= STORE USER =================
-        req.user = decoded;
+        req.user = {
+            userId: decoded.user_id,
+            email: decoded.email,
+            userType: decoded.user_type,
+        };
 
         next();
     } catch (error) {

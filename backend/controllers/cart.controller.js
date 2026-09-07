@@ -1,4 +1,3 @@
-// backend/controllers/cart.controller.js
 const { v4: uuidv4 } = require('uuid');
 const { pool } = require('../config/database');
 const {
@@ -8,295 +7,725 @@ const {
     sendInternalError
 } = require('../utils/responseHandler');
 
-// ================= GET CART =================
+/**
+ * GET /api/cart
+ * Get the current user's cart with all items.
+ */
 const getCart = async (req, res) => {
     try {
         const userId = req.user.userId;
 
-        // Fetch cart items
-        const result = await pool.query(
-            `
-            SELECT 
-                cart_id,
-                restaurant_id,
-                item_id,
-                item_name,
-                quantity,
-                price,
-                total_price,
-                special_instructions,
-                created_at
-            FROM cart
-            WHERE user_id = $1
-            ORDER BY created_at DESC
-            `,
-            [userId]
+        const result = await pool.query(`
+            SELECT
+                c.cart_id,
+                c.restaurant_id,
+                r.name AS restaurant_name,
+                ci.cart_item_id,
+                ci.menu_item_id,
+                ci.item_name,
+                ci.quantity,
+                ci.price,
+                (ci.quantity * ci.price) AS total_price,
+                ci.special_instructions,
+                ci.created_at
+            FROM carts c
+            LEFT JOIN restaurants r
+                ON c.restaurant_id = r.restaurant_id
+            LEFT JOIN cart_items ci
+                ON c.cart_id = ci.cart_id
+            WHERE c.user_id = $1
+            ORDER BY ci.created_at DESC
+        `, [userId]);
+
+        const rows = result.rows;
+
+        if (rows.length === 0) {
+            return sendSuccess(
+                res,
+                {
+                    cart_id: null,
+                    restaurant_id: null,
+                    restaurant_name: null,
+                    items: [],
+                    subtotal: 0,
+                    item_count: 0
+                },
+                'Cart is empty'
+            );
+        }
+
+        const firstRow = rows[0];
+
+        const items = rows
+            .filter(row => row.cart_item_id !== null)
+            .map(row => ({
+                cart_item_id: row.cart_item_id,
+                menu_item_id: row.menu_item_id,
+                item_name: row.item_name,
+                quantity: Number(row.quantity),
+                price: Number(row.price),
+                total_price: Number(row.total_price),
+                special_instructions: row.special_instructions,
+                created_at: row.created_at
+            }));
+
+        const subtotal = items.reduce(
+            (sum, item) => sum + item.total_price,
+            0
         );
 
-        // Calculate subtotal and item count
-        const subtotal = result.rows.reduce((sum, item) => sum + Number(item.total_price), 0);
-        const itemCount = result.rows.reduce((sum, item) => sum + Number(item.quantity), 0);
+        const itemCount = items.reduce(
+            (sum, item) => sum + item.quantity,
+            0
+        );
 
-        return sendSuccess(res, {
-            items: result.rows,
-            subtotal: subtotal,
-            item_count: itemCount
-        }, 'Cart fetched successfully');
+        return sendSuccess(
+            res,
+            {
+                cart_id: firstRow.cart_id,
+                restaurant_id: firstRow.restaurant_id,
+                restaurant_name: firstRow.restaurant_name,
+                items,
+                subtotal,
+                item_count: itemCount
+            },
+            'Cart fetched successfully'
+        );
 
     } catch (error) {
         console.error('Get Cart Error:', error.message);
-        return sendInternalError(res, 'Failed to fetch cart', error);
+        return sendInternalError(
+            res,
+            'Failed to fetch cart',
+            error
+        );
     }
 };
 
-// ================= ADD TO CART =================
+
+/**
+ * POST /api/cart/add
+ * Add a menu item to the user's cart.
+ */
 const addToCart = async (req, res) => {
+    const client = await pool.connect();
+
     try {
         const userId = req.user.userId;
+
         const {
             restaurant_id,
             item_id,
-            item_name,
-            price,
             quantity = 1,
             special_instructions = ''
         } = req.body;
 
-        // Validation
-        if (!restaurant_id || !item_id || !item_name || !price) {
-            return sendError(res, 'Missing required fields: restaurant_id, item_id, item_name, price are required', 400);
-        }
-
-        // Check if item already exists in cart
-        const existingItem = await pool.query(
-            `
-            SELECT cart_id, quantity, price
-            FROM cart
-            WHERE user_id = $1 AND item_id = $2
-            `,
-            [userId, item_id]
-        );
-
-        // If item exists, update quantity
-        if (existingItem.rows.length > 0) {
-            const existing = existingItem.rows[0];
-            const updatedQuantity = existing.quantity + quantity;
-            const updatedTotal = updatedQuantity * price;
-
-            await pool.query(
-                `
-                UPDATE cart
-                SET quantity = $1, total_price = $2
-                WHERE cart_id = $3
-                `,
-                [updatedQuantity, updatedTotal, existing.cart_id]
+        if (!restaurant_id || !item_id) {
+            return sendError(
+                res,
+                'restaurant_id and item_id are required',
+                400
             );
-
-            return sendSuccess(res, null, 'Cart item updated successfully');
         }
 
-        // Insert new item
-        const cartId = uuidv4();
-        const totalPrice = price * quantity;
+        if (!Number.isInteger(Number(quantity)) || Number(quantity) <= 0) {
+            return sendError(
+                res,
+                'Quantity must be a positive integer',
+                400
+            );
+        }
 
-        await pool.query(
-            `
-            INSERT INTO cart (
-                cart_id, user_id, restaurant_id, item_id, item_name,
-                quantity, price, total_price, special_instructions
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            `,
-            [cartId, userId, restaurant_id, item_id, item_name, quantity, price, totalPrice, special_instructions]
+        const requestedQuantity = Number(quantity);
+
+        await client.query('BEGIN');
+
+        // Verify the restaurant and menu item from the database.
+        const menuResult = await client.query(`
+            SELECT
+                mi.item_id,
+                mi.name,
+                mi.price,
+                mi.is_available,
+                mi.restaurant_id
+            FROM menu_items mi
+            WHERE mi.item_id = $1
+              AND mi.restaurant_id = $2
+        `, [item_id, restaurant_id]);
+
+        if (menuResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+
+            return sendNotFound(
+                res,
+                'Menu item not found for this restaurant'
+            );
+        }
+
+        const menuItem = menuResult.rows[0];
+
+        if (!menuItem.is_available) {
+            await client.query('ROLLBACK');
+
+            return sendError(
+                res,
+                'This menu item is currently unavailable',
+                400
+            );
+        }
+
+        // Get the user's active cart.
+        let cartResult = await client.query(`
+            SELECT cart_id, restaurant_id
+            FROM carts
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE
+        `, [userId]);
+
+        let cartId;
+
+        if (cartResult.rows.length === 0) {
+
+            cartId = uuidv4();
+
+            await client.query(`
+                INSERT INTO carts (
+                    cart_id,
+                    user_id,
+                    restaurant_id
+                )
+                VALUES ($1, $2, $3)
+            `, [
+                cartId,
+                userId,
+                restaurant_id
+            ]);
+
+        } else {
+
+            cartId = cartResult.rows[0].cart_id;
+
+            const existingRestaurantId =
+                cartResult.rows[0].restaurant_id;
+
+            if (
+                existingRestaurantId &&
+                existingRestaurantId !== restaurant_id
+            ) {
+                await client.query('ROLLBACK');
+
+                return sendError(
+                    res,
+                    'Cart contains items from another restaurant. Clear the cart before adding items from a different restaurant.',
+                    409
+                );
+            }
+
+            // Make sure the cart is associated with this restaurant.
+            if (!existingRestaurantId) {
+                await client.query(`
+                    UPDATE carts
+                    SET restaurant_id = $1,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE cart_id = $2
+                `, [
+                    restaurant_id,
+                    cartId
+                ]);
+            }
+        }
+
+        // Check whether this menu item already exists in the cart.
+        const existingItemResult = await client.query(`
+            SELECT
+                cart_item_id,
+                quantity
+            FROM cart_items
+            WHERE cart_id = $1
+              AND menu_item_id = $2
+            FOR UPDATE
+        `, [
+            cartId,
+            item_id
+        ]);
+
+        let cartItemId;
+        let finalQuantity;
+
+        if (existingItemResult.rows.length > 0) {
+
+            const existingItem = existingItemResult.rows[0];
+
+            finalQuantity =
+                Number(existingItem.quantity) + requestedQuantity;
+
+            cartItemId = existingItem.cart_item_id;
+
+            await client.query(`
+                UPDATE cart_items
+                SET quantity = $1,
+                    price = $2,
+                    special_instructions = $3
+                WHERE cart_item_id = $4
+            `, [
+                finalQuantity,
+                menuItem.price,
+                special_instructions,
+                cartItemId
+            ]);
+
+        } else {
+
+            cartItemId = uuidv4();
+            finalQuantity = requestedQuantity;
+
+            await client.query(`
+                INSERT INTO cart_items (
+                    cart_item_id,
+                    cart_id,
+                    menu_item_id,
+                    item_name,
+                    quantity,
+                    price,
+                    special_instructions
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `, [
+                cartItemId,
+                cartId,
+                menuItem.item_id,
+                menuItem.name,
+                finalQuantity,
+                menuItem.price,
+                special_instructions
+            ]);
+        }
+
+        await client.query(`
+            UPDATE carts
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE cart_id = $1
+        `, [cartId]);
+
+        await client.query('COMMIT');
+
+        return sendSuccess(
+            res,
+            {
+                cart_id: cartId,
+                cart_item_id: cartItemId,
+                menu_item_id: menuItem.item_id,
+                item_name: menuItem.name,
+                quantity: finalQuantity,
+                price: Number(menuItem.price)
+            },
+            'Item added to cart successfully',
+            201
         );
-
-        return sendSuccess(res, { cart_id: cartId }, 'Item added to cart successfully', 201);
 
     } catch (error) {
+
+        await client.query('ROLLBACK');
+
         console.error('Add To Cart Error:', error.message);
-        return sendInternalError(res, 'Failed to add item to cart', error);
+
+        return sendInternalError(
+            res,
+            'Failed to add item to cart',
+            error
+        );
+
+    } finally {
+        client.release();
     }
 };
 
-// ================= UPDATE CART ITEM =================
+
+/**
+ * PUT /api/cart/:cartId
+ * Update the quantity of a cart item.
+ */
 const updateCartItem = async (req, res) => {
     try {
         const { cartId } = req.params;
         const { quantity } = req.body;
         const userId = req.user.userId;
 
-        // Validation
-        if (quantity === undefined || quantity < 0) {
-            return sendError(res, 'Valid quantity required (must be >= 0)', 400);
+        if (
+            quantity === undefined ||
+            !Number.isInteger(Number(quantity)) ||
+            Number(quantity) < 0
+        ) {
+            return sendError(
+                res,
+                'Quantity must be a non-negative integer',
+                400
+            );
         }
 
-        // Check if cart item exists
-        const checkItem = await pool.query(
-            'SELECT cart_id FROM cart WHERE cart_id = $1 AND user_id = $2',
-            [cartId, userId]
-        );
+        const newQuantity = Number(quantity);
+
+        const checkItem = await pool.query(`
+            SELECT
+                ci.cart_item_id,
+                ci.cart_id
+            FROM cart_items ci
+            INNER JOIN carts c
+                ON ci.cart_id = c.cart_id
+            WHERE ci.cart_item_id = $1
+              AND c.user_id = $2
+        `, [
+            cartId,
+            userId
+        ]);
 
         if (checkItem.rows.length === 0) {
-            return sendNotFound(res, 'Cart item not found');
-        }
-
-        // Remove item if quantity is 0
-        if (quantity === 0) {
-            await pool.query(
-                'DELETE FROM cart WHERE cart_id = $1 AND user_id = $2',
-                [cartId, userId]
+            return sendNotFound(
+                res,
+                'Cart item not found'
             );
-            return sendSuccess(res, null, 'Item removed from cart');
         }
 
-        // Update quantity
-        await pool.query(
-            `
-            UPDATE cart
-            SET quantity = $1, total_price = price * $1
-            WHERE cart_id = $2 AND user_id = $3
-            `,
-            [quantity, cartId, userId]
+        if (newQuantity === 0) {
+
+            await pool.query(`
+                DELETE FROM cart_items
+                WHERE cart_item_id = $1
+            `, [cartId]);
+
+            return sendSuccess(
+                res,
+                null,
+                'Cart item removed successfully'
+            );
+        }
+
+        await pool.query(`
+            UPDATE cart_items
+            SET quantity = $1
+            WHERE cart_item_id = $2
+        `, [
+            newQuantity,
+            cartId
+        ]);
+
+        await pool.query(`
+            UPDATE carts
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE cart_id = $1
+        `, [
+            checkItem.rows[0].cart_id
+        ]);
+
+        return sendSuccess(
+            res,
+            {
+                cart_item_id: cartId,
+                quantity: newQuantity
+            },
+            'Cart item updated successfully'
         );
 
-        return sendSuccess(res, null, 'Cart updated successfully');
-
     } catch (error) {
-        console.error('Update Cart Error:', error.message);
-        return sendInternalError(res, 'Failed to update cart', error);
+        console.error('Update Cart Item Error:', error.message);
+
+        return sendInternalError(
+            res,
+            'Failed to update cart item',
+            error
+        );
     }
 };
 
-// ================= REMOVE FROM CART =================
+
+/**
+ * DELETE /api/cart/:cartId
+ * Remove one cart item.
+ */
 const removeFromCart = async (req, res) => {
     try {
         const { cartId } = req.params;
         const userId = req.user.userId;
 
-        // Check if cart item exists
-        const checkItem = await pool.query(
-            'SELECT cart_id FROM cart WHERE cart_id = $1 AND user_id = $2',
-            [cartId, userId]
-        );
+        const checkItem = await pool.query(`
+            SELECT
+                ci.cart_item_id,
+                ci.cart_id
+            FROM cart_items ci
+            INNER JOIN carts c
+                ON ci.cart_id = c.cart_id
+            WHERE ci.cart_item_id = $1
+              AND c.user_id = $2
+        `, [
+            cartId,
+            userId
+        ]);
 
         if (checkItem.rows.length === 0) {
-            return sendNotFound(res, 'Cart item not found');
+            return sendNotFound(
+                res,
+                'Cart item not found'
+            );
         }
 
-        await pool.query(
-            'DELETE FROM cart WHERE cart_id = $1 AND user_id = $2',
-            [cartId, userId]
-        );
+        await pool.query(`
+            DELETE FROM cart_items
+            WHERE cart_item_id = $1
+        `, [cartId]);
 
-        return sendSuccess(res, null, 'Item removed from cart');
+        await pool.query(`
+            UPDATE carts
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE cart_id = $1
+        `, [
+            checkItem.rows[0].cart_id
+        ]);
+
+        return sendSuccess(
+            res,
+            null,
+            'Cart item removed successfully'
+        );
 
     } catch (error) {
         console.error('Remove From Cart Error:', error.message);
-        return sendInternalError(res, 'Failed to remove item', error);
+
+        return sendInternalError(
+            res,
+            'Failed to remove cart item',
+            error
+        );
     }
 };
 
-// ================= CLEAR CART =================
+
+/**
+ * DELETE /api/cart
+ * Clear the user's cart.
+ */
 const clearCart = async (req, res) => {
+    const client = await pool.connect();
+
     try {
         const userId = req.user.userId;
 
-        await pool.query(
-            'DELETE FROM cart WHERE user_id = $1',
-            [userId]
+        await client.query('BEGIN');
+
+        const cartResult = await client.query(`
+            SELECT cart_id
+            FROM carts
+            WHERE user_id = $1
+        `, [userId]);
+
+        if (cartResult.rows.length === 0) {
+            await client.query('COMMIT');
+
+            return sendSuccess(
+                res,
+                null,
+                'Cart is already empty'
+            );
+        }
+
+        await client.query(`
+            DELETE FROM carts
+            WHERE user_id = $1
+        `, [userId]);
+
+        await client.query('COMMIT');
+
+        return sendSuccess(
+            res,
+            null,
+            'Cart cleared successfully'
         );
 
-        return sendSuccess(res, null, 'Cart cleared successfully');
-
     } catch (error) {
+
+        await client.query('ROLLBACK');
+
         console.error('Clear Cart Error:', error.message);
-        return sendInternalError(res, 'Failed to clear cart', error);
+
+        return sendInternalError(
+            res,
+            'Failed to clear cart',
+            error
+        );
+
+    } finally {
+        client.release();
     }
 };
 
-// ================= GET CART SUMMARY (for checkout) =================
+
+/**
+ * GET /api/cart/summary
+ * Get cart subtotal, delivery fee, tax and total.
+ */
 const getCartSummary = async (req, res) => {
     try {
         const userId = req.user.userId;
 
-        const result = await pool.query(
-            `
-            SELECT 
-                COUNT(*) as item_count,
-                COALESCE(SUM(total_price), 0) as subtotal,
-                MIN(restaurant_id) as restaurant_id,
-                MIN(restaurant_name) as restaurant_name
-            FROM cart 
-            WHERE user_id = $1
-            GROUP BY restaurant_id
-            `,
-            [userId]
-        );
+        const result = await pool.query(`
+            SELECT
+                c.cart_id,
+                c.restaurant_id,
+                r.name AS restaurant_name,
+                COUNT(ci.cart_item_id) AS line_item_count,
+                COALESCE(
+                    SUM(ci.quantity * ci.price),
+                    0
+                ) AS subtotal,
+                COALESCE(
+                    SUM(ci.quantity),
+                    0
+                ) AS item_count
+            FROM carts c
+            LEFT JOIN restaurants r
+                ON c.restaurant_id = r.restaurant_id
+            LEFT JOIN cart_items ci
+                ON c.cart_id = ci.cart_id
+            WHERE c.user_id = $1
+            GROUP BY
+                c.cart_id,
+                c.restaurant_id,
+                r.name
+            ORDER BY c.created_at DESC
+            LIMIT 1
+        `, [userId]);
 
         if (result.rows.length === 0) {
-            return sendSuccess(res, {
-                item_count: 0,
-                subtotal: 0,
-                delivery_fee: 0,
-                tax: 0,
-                total: 0
-            }, 'Cart is empty');
+            return sendSuccess(
+                res,
+                {
+                    cart_id: null,
+                    restaurant_id: null,
+                    restaurant_name: null,
+                    item_count: 0,
+                    subtotal: 0,
+                    delivery_fee: 0,
+                    tax: 0,
+                    total: 0
+                },
+                'Cart is empty'
+            );
         }
 
-        const subtotal = parseFloat(result.rows[0].subtotal);
-        const deliveryFee = 29;
-        const tax = subtotal * 0.05; // 5% tax
-        const total = subtotal + deliveryFee + tax;
+        const cart = result.rows[0];
 
-        return sendSuccess(res, {
-            item_count: parseInt(result.rows[0].item_count),
-            subtotal: subtotal,
-            delivery_fee: deliveryFee,
-            tax: tax,
-            total: total,
-            restaurant_id: result.rows[0].restaurant_id,
-            restaurant_name: result.rows[0].restaurant_name
-        }, 'Cart summary fetched successfully');
+        const subtotal = Number(cart.subtotal);
+        const itemCount = Number(cart.item_count);
+
+        const deliveryFee = subtotal > 0 ? 29 : 0;
+        const tax = Number((subtotal * 0.05).toFixed(2));
+        const total = Number(
+            (subtotal + deliveryFee + tax).toFixed(2)
+        );
+
+        return sendSuccess(
+            res,
+            {
+                cart_id: cart.cart_id,
+                restaurant_id: cart.restaurant_id,
+                restaurant_name: cart.restaurant_name,
+                item_count: itemCount,
+                subtotal,
+                delivery_fee: deliveryFee,
+                tax,
+                total
+            },
+            'Cart summary fetched successfully'
+        );
 
     } catch (error) {
         console.error('Get Cart Summary Error:', error.message);
-        return sendInternalError(res, 'Failed to fetch cart summary', error);
+
+        return sendInternalError(
+            res,
+            'Failed to fetch cart summary',
+            error
+        );
     }
 };
 
-// ================= CHECK RESTAURANT CONSISTENCY =================
+
+/**
+ * POST /api/cart/check-restaurant
+ * Check whether adding a restaurant would conflict
+ * with the current cart.
+ */
 const checkRestaurantConsistency = async (req, res) => {
     try {
         const userId = req.user.userId;
         const { restaurant_id } = req.body;
 
         if (!restaurant_id) {
-            return sendError(res, 'Restaurant ID is required', 400);
+            return sendError(
+                res,
+                'restaurant_id is required',
+                400
+            );
         }
 
-        const result = await pool.query(
-            `
-            SELECT DISTINCT restaurant_id 
-            FROM cart 
-            WHERE user_id = $1 AND restaurant_id != $2
-            `,
-            [userId, restaurant_id]
+        const result = await pool.query(`
+            SELECT restaurant_id
+            FROM carts
+            WHERE user_id = $1
+              AND restaurant_id IS NOT NULL
+            ORDER BY created_at DESC
+            LIMIT 1
+        `, [userId]);
+
+        if (result.rows.length === 0) {
+            return sendSuccess(
+                res,
+                {
+                    has_conflict: false
+                },
+                'No restaurant conflict'
+            );
+        }
+
+        const existingRestaurantId =
+            result.rows[0].restaurant_id;
+
+        if (existingRestaurantId !== restaurant_id) {
+            return sendSuccess(
+                res,
+                {
+                    has_conflict: true,
+                    existing_restaurant_id: existingRestaurantId,
+                    message:
+                        'Cart contains items from a different restaurant. Clear the cart before adding items from another restaurant.'
+                },
+                'Restaurant conflict detected'
+            );
+        }
+
+        return sendSuccess(
+            res,
+            {
+                has_conflict: false
+            },
+            'No restaurant conflict'
         );
 
-        if (result.rows.length > 0) {
-            return sendSuccess(res, {
-                has_conflict: true,
-                existing_restaurant_id: result.rows[0].restaurant_id,
-                message: 'Cart contains items from a different restaurant. Clear cart or continue with existing items?'
-            }, 'Restaurant conflict detected');
-        }
-
-        return sendSuccess(res, { has_conflict: false }, 'No restaurant conflict');
-
     } catch (error) {
-        console.error('Check Restaurant Consistency Error:', error.message);
-        return sendInternalError(res, 'Failed to check restaurant consistency', error);
+        console.error(
+            'Check Restaurant Consistency Error:',
+            error.message
+        );
+
+        return sendInternalError(
+            res,
+            'Failed to check restaurant consistency',
+            error
+        );
     }
 };
+
 
 module.exports = {
     getCart,
