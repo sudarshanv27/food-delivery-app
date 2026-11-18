@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -9,65 +9,163 @@ import {
   LogOut,
   TrendingUp,
   Bell,
-  BarChart3
+  BarChart3,
+  Truck
 } from 'lucide-react';
+
 import './Sidebar.css';
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+
+  // ======================================================
+  // NAVIGATION ITEMS
+  // ======================================================
+
+  const navigationItems = [
+    {
+      path: '/dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard
+    },
+    {
+      path: '/orders',
+      label: 'Orders',
+      icon: ShoppingBag
+    },
+    {
+      path: '/restaurants',
+      label: 'Restaurants',
+      icon: Store
+    },
+    {
+      path: '/users',
+      label: 'Users',
+      icon: Users
+    },
+    {
+      path: '/delivery-partners',
+      label: 'Delivery Partners',
+      icon: Truck
+    },
+    {
+      path: '/analytics',
+      label: 'Analytics',
+      icon: BarChart3
+    },
+    {
+      path: '/notifications',
+      label: 'Notifications',
+      icon: Bell
+    },
+    {
+      path: '/settings',
+      label: 'Settings',
+      icon: Settings
+    }
+  ];
+
+  // ======================================================
+  // LOGOUT
+  // ======================================================
+
   const handleLogout = () => {
+    // Remove all Admin Panel authentication data.
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    window.location.href = '/login';
+
+    // Compatibility key used by older components.
+    localStorage.removeItem('admin');
+
+    // Clear any other temporary admin-panel data
+    // that may be added later.
+    sessionStorage.clear();
+
+    navigate('/login', { replace: true });
   };
 
+  // ======================================================
+  // UI
+  // ======================================================
+
   return (
-    <div className="sidebar">
+    <aside className="sidebar">
+
+      {/* ==================================================
+          SIDEBAR HEADER
+      ================================================== */}
+
       <div className="sidebar-header">
+
         <div className="logo">
-          <TrendingUp size={28} color="#ff4757" />
+          <TrendingUp
+            size={28}
+            aria-hidden="true"
+          />
+
           <span>FoodieDash</span>
         </div>
-        <div className="beta-badge">Admin</div>
+
+        <span className="beta-badge">
+          Admin
+        </span>
+
       </div>
 
-      <nav className="sidebar-nav">
-        <NavLink to="/" className="nav-item" end>
-          <LayoutDashboard size={20} />
-          <span>Dashboard</span>
-        </NavLink>
-        <NavLink to="/orders" className="nav-item">
-          <ShoppingBag size={20} />
-          <span>Orders</span>
-        </NavLink>
-        <NavLink to="/restaurants" className="nav-item">
-          <Store size={20} />
-          <span>Restaurants</span>
-        </NavLink>
-        <NavLink to="/users" className="nav-item">
-          <Users size={20} />
-          <span>Users</span>
-        </NavLink>
-        <NavLink to="/analytics" className="nav-item">
-          <BarChart3 size={20} />
-          <span>Analytics</span>
-        </NavLink>
-        <NavLink to="/notifications" className="nav-item">
-          <Bell size={20} />
-          <span>Notifications</span>
-        </NavLink>
-        <NavLink to="/settings" className="nav-item">
-          <Settings size={20} />
-          <span>Settings</span>
-        </NavLink>
+      {/* ==================================================
+          NAVIGATION
+      ================================================== */}
+
+      <nav
+        className="sidebar-nav"
+        aria-label="Admin navigation"
+      >
+        {navigationItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `nav-item${isActive ? ' active' : ''}`
+              }
+              end={item.path === '/dashboard'}
+            >
+              <Icon
+                size={20}
+                aria-hidden="true"
+              />
+
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
 
+      {/* ==================================================
+          SIDEBAR FOOTER
+      ================================================== */}
+
       <div className="sidebar-footer">
-        <button className="logout-btn" onClick={handleLogout}>
-          <LogOut size={20} />
+
+        <button
+          type="button"
+          className="logout-btn"
+          onClick={handleLogout}
+          aria-label="Logout from FoodieDash Admin Panel"
+        >
+          <LogOut
+            size={20}
+            aria-hidden="true"
+          />
+
           <span>Logout</span>
         </button>
+
       </div>
-    </div>
+
+    </aside>
   );
 };
 

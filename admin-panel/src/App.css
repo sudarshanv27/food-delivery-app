@@ -1,23 +1,116 @@
+/* =========================================================
+   FoodieDash Admin Panel
+   App Layout
+   ========================================================= */
+
 .app-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  background: #f5f6fa;
 }
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
 
 .main-content {
   flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+
   margin-left: 260px;
+
   display: flex;
   flex-direction: column;
+
+  background: #f5f6fa;
 }
 
+/* =========================================================
+   PAGE CONTENT
+   ========================================================= */
+
 .content-wrapper {
+  flex: 1;
+
+  width: 100%;
+  box-sizing: border-box;
+
   padding: 24px;
+
   background: #f5f6fa;
+
   min-height: calc(100vh - 70px);
 }
+
+/* =========================================================
+   GLOBAL BOX SIZING
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+button,
+a,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #ff4757;
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   RESPONSIVE - TABLET
+   ========================================================= */
+
+@media (max-width: 1024px) {
+  .main-content {
+    margin-left: 230px;
+  }
+
+  .content-wrapper {
+    padding: 20px;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE - MOBILE
+   ========================================================= */
 
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0;
+    width: 100%;
+  }
+
+  .content-wrapper {
+    padding: 16px;
+    min-height: calc(100vh - 60px);
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .content-wrapper {
+    padding: 12px;
   }
 }

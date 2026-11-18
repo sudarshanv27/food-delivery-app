@@ -1,40 +1,107 @@
 // backend/routes/cart.routes.js
+
 const express = require('express');
+
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
+
+const {
+    authenticate
+} = require('../middleware/auth');
+
 const {
     getCart,
+    getCartSummary,
     addToCart,
     updateCartItem,
-    removeFromCart,
+    removeCartItem,
     clearCart,
-    getCartSummary,
     checkRestaurantConsistency
 } = require('../controllers/cart.controller');
 
-// ================= ALL CART ROUTES REQUIRE AUTHENTICATION =================
+// =====================================================
+// ALL CART ROUTES REQUIRE AUTHENTICATION
+// =====================================================
+
 router.use(authenticate);
 
-// ================= CART ROUTES =================
-// Get user cart
-router.get('/', getCart);
 
-// Get cart summary for checkout
-router.get('/summary', getCartSummary);
+// =====================================================
+// GET CART
+// GET /api/cart
+// =====================================================
 
-// Add item to cart
-router.post('/add', addToCart);
+router.get(
+    '/',
+    getCart
+);
 
-// Check restaurant consistency (prevents mixing restaurants)
-router.post('/check-restaurant', checkRestaurantConsistency);
 
-// Update cart item quantity
-router.put('/:cartId', updateCartItem);
+// =====================================================
+// GET CART SUMMARY
+// GET /api/cart/summary
+// =====================================================
 
-// Remove single cart item
-router.delete('/:cartId', removeFromCart);
+router.get(
+    '/summary',
+    getCartSummary
+);
 
-// Clear entire cart
-router.delete('/', clearCart);
+
+// =====================================================
+// ADD ITEM TO CART
+// POST /api/cart/add
+// =====================================================
+
+router.post(
+    '/add',
+    addToCart
+);
+
+
+// =====================================================
+// CHECK RESTAURANT CONSISTENCY
+// POST /api/cart/check-restaurant
+// =====================================================
+
+router.post(
+    '/check-restaurant',
+    checkRestaurantConsistency
+);
+
+
+// =====================================================
+// UPDATE CART ITEM
+// PUT /api/cart/:cartId/items/:cartItemId
+// =====================================================
+
+router.put(
+    '/:cartId/items/:cartItemId',
+    updateCartItem
+);
+
+
+// =====================================================
+// REMOVE CART ITEM
+// DELETE /api/cart/:cartId/items/:cartItemId
+// =====================================================
+
+router.delete(
+    '/:cartId/items/:cartItemId',
+    removeCartItem
+);
+
+
+// =====================================================
+// CLEAR CART
+// DELETE /api/cart
+// =====================================================
+
+router.delete(
+    '/',
+    clearCart
+);
+
+
+// =====================================================
 
 module.exports = router;

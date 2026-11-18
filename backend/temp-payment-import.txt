@@ -1,0 +1,1 @@
+const paymentRoutes = require("./routes/payment.routes");

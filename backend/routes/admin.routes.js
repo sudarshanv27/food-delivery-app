@@ -13,23 +13,91 @@ const {
     getStats,
     getRecentOrders,
     getRecentUsers,
-    getAllRestaurants
+
+    getAllUsers,
+    updateUserStatus,
+
+    getAllRestaurants,
+    updateRestaurantStatus,
+
+    getAllOrders,
+    getAnalytics
 } = require('../controllers/admin.controller');
 
-// ================= ADMIN PROTECTED ROUTES =================
+// ============================================================
+// ================= ADMIN PROTECTION =========================
+// ============================================================
+
 router.use(authenticate);
 router.use(isAdmin);
 
-// Dashboard statistics
-router.get('/stats', getStats);
+// ============================================================
+// ================= DASHBOARD ================================
+// ============================================================
 
-// Recent orders
-router.get('/orders/recent', getRecentOrders);
+router.get(
+    '/stats',
+    getStats
+);
 
-// Recent users
-router.get('/users/recent', getRecentUsers);
+router.get(
+    '/orders/recent',
+    getRecentOrders
+);
 
-// All restaurants
-router.get('/restaurants', getAllRestaurants);
+router.get(
+    '/users/recent',
+    getRecentUsers
+);
+
+// ============================================================
+// ================= USERS ====================================
+// ============================================================
+
+router.get(
+    '/users',
+    getAllUsers
+);
+
+router.put(
+    '/users/:userId/status',
+    updateUserStatus
+);
+
+// ============================================================
+// ================= RESTAURANTS ===============================
+// ============================================================
+
+router.get(
+    '/restaurants',
+    getAllRestaurants
+);
+
+router.put(
+    '/restaurants/:restaurantId/status',
+    updateRestaurantStatus
+);
+
+// ============================================================
+// ================= ORDERS ====================================
+// ============================================================
+
+router.get(
+    '/orders',
+    getAllOrders
+);
+
+// ============================================================
+// ================= ANALYTICS ================================
+// ============================================================
+
+router.get(
+    '/analytics',
+    getAnalytics
+);
+
+// ============================================================
+// ================= EXPORT ====================================
+// ============================================================
 
 module.exports = router;

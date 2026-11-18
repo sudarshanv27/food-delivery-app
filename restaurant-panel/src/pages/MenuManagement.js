@@ -155,4 +155,5 @@ const styles = {
     textarea: { width: '100%', padding: '12px', marginBottom: '15px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', minHeight: '80px', boxSizing: 'border-box' },
     checkbox: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' },
     submitBtn: { padding: '12px 24px', backgroundColor: '#ff6b35', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' },
-    menuGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' },
+    menuGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }
+}

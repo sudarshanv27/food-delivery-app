@@ -1,175 +1,265 @@
 // src/pages/Orders.js
 
-import React, { useState, useEffect } from 'react';
-
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Eye,
-  Search
+  Search,
+  RefreshCw,
+  X
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import API from '../services/api';
 
 const Orders = () => {
-
-  // ================= STATES =================
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
-  const [searchTerm, setSearchTerm] =
-    useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const [filterStatus, setFilterStatus] =
-    useState('all');
+  // ================= FETCH ORDERS =================
 
-  // ================= LOAD ORDERS =================
-  useEffect(() => {
-
-    // Demo Orders
-    setOrders([
-      {
-        id: 'ORD001',
-        customer: 'John Doe',
-        restaurant: 'Pizza Paradise',
-        amount: 450,
-        status: 'delivered',
-        date: '2024-01-15',
-        items: 3
-      },
-      {
-        id: 'ORD002',
-        customer: 'Jane Smith',
-        restaurant: 'Burger Hub',
-        amount: 320,
-        status: 'pending',
-        date: '2024-01-15',
-        items: 2
-      },
-      {
-        id: 'ORD003',
-        customer: 'Mike Johnson',
-        restaurant: 'Sushi Master',
-        amount: 680,
-        status: 'preparing',
-        date: '2024-01-14',
-        items: 4
-      },
-      {
-        id: 'ORD004',
-        customer: 'Sarah Williams',
-        restaurant: 'Taco Fiesta',
-        amount: 250,
-        status: 'delivered',
-        date: '2024-01-14',
-        items: 2
-      },
-      {
-        id: 'ORD005',
-        customer: 'David Brown',
-        restaurant: 'Chinese Wok',
-        amount: 520,
-        status: 'out_for_delivery',
-        date: '2024-01-13',
-        items: 3
+  const fetchOrders = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
-    ]);
 
-    setLoading(false);
+      const response = await API.get('/admin/orders');
 
-  }, []);
+      if (response.data?.success) {
+        setOrders(
+          response.data.data ||
+          response.data.orders ||
+          []
+        );
+      } else {
+        throw new Error(
+          response.data?.message ||
+          'Failed to fetch orders'
+        );
+      }
 
-  // ================= STATUS COLORS =================
-  const getStatusColor = (status) => {
+    } catch (error) {
+      console.error('Orders error:', error);
 
-    const colors = {
-      pending: '#ffa502',
-      confirmed: '#1e90ff',
-      preparing: '#ff6348',
-      out_for_delivery: '#2ed573',
-      delivered: '#2ed573',
-      cancelled: '#ff4757'
-    };
+      toast.error(
+        error.response?.data?.message ||
+        'Failed to fetch orders'
+      );
 
-    return colors[status] || '#666';
-
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  // ================= FILTER ORDERS =================
-  const filteredOrders = orders.filter(
-    (order) => {
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // ================= HELPERS =================
+
+  const formatCurrency = (value) => {
+    return `₹${Number(value || 0).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '-';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return '-';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusClass = (status) => {
+    return `status-${String(status || 'unknown')
+      .toLowerCase()
+      .replace(/_/g, '-')}`;
+  };
+
+  const getStatusText = (status) => {
+    if (!status) return 'Unknown';
+
+    return String(status)
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (letter) =>
+        letter.toUpperCase()
+      );
+  };
+
+  // ================= FILTER =================
+
+  const filteredOrders = useMemo(() => {
+    const search = searchTerm
+      .trim()
+      .toLowerCase();
+
+    return orders.filter((order) => {
+      const status =
+        order.order_status ||
+        order.status ||
+        '';
+
+      const orderNumber =
+        order.order_number ||
+        order.order_id ||
+        order.id ||
+        '';
+
+      const customer =
+        order.customer_name ||
+        order.full_name ||
+        order.customer ||
+        '';
+
+      const restaurant =
+        order.restaurant_name ||
+        order.restaurant ||
+        '';
 
       const matchesStatus =
         filterStatus === 'all' ||
-        order.status === filterStatus;
+        status === filterStatus;
 
       const matchesSearch =
-        order.id
+        !search ||
+        String(orderNumber)
           .toLowerCase()
-          .includes(
-            searchTerm.toLowerCase()
-          ) ||
-        order.customer
+          .includes(search) ||
+        String(customer)
           .toLowerCase()
-          .includes(
-            searchTerm.toLowerCase()
-          );
+          .includes(search) ||
+        String(restaurant)
+          .toLowerCase()
+          .includes(search);
 
-      return (
-        matchesStatus &&
-        matchesSearch
-      );
-
-    }
-  );
+      return matchesStatus && matchesSearch;
+    });
+  }, [
+    orders,
+    searchTerm,
+    filterStatus
+  ]);
 
   // ================= LOADING =================
+
   if (loading) {
-
     return (
-
-      <div style={styles.loaderContainer}>
-
-        <div style={styles.loader}></div>
-
+      <div style={styles.loading}>
+        <RefreshCw
+          size={28}
+          style={styles.loadingIcon}
+        />
+        <p>Loading orders...</p>
       </div>
-
     );
-
   }
 
   // ================= UI =================
-  return (
 
+  return (
     <div style={styles.container}>
 
       {/* ================= HEADER ================= */}
+
       <div style={styles.header}>
 
-        <h1 style={styles.heading}>
-          Orders Management
-        </h1>
+        <div>
+          <h1 style={styles.heading}>
+            Orders Management
+          </h1>
 
-        <p style={styles.subHeading}>
-          View and manage all customer orders
-        </p>
+          <p style={styles.subHeading}>
+            View and manage all customer orders
+          </p>
+        </div>
+
+        <button
+          onClick={() => fetchOrders(true)}
+          disabled={refreshing}
+          style={styles.refreshButton}
+        >
+          <RefreshCw
+            size={17}
+            style={
+              refreshing
+                ? styles.spinning
+                : undefined
+            }
+          />
+
+          {refreshing
+            ? 'Refreshing...'
+            : 'Refresh'}
+        </button>
 
       </div>
 
       {/* ================= CARD ================= */}
+
       <div style={styles.card}>
 
-        {/* CARD HEADER */}
         <div style={styles.cardHeader}>
 
-          <h2 style={styles.cardTitle}>
-            All Orders
-          </h2>
+          <div>
+            <h2 style={styles.cardTitle}>
+              All Orders
+            </h2>
+
+            <p style={styles.countText}>
+              {filteredOrders.length} order
+              {filteredOrders.length !== 1
+                ? 's'
+                : ''}
+            </p>
+          </div>
 
           <div style={styles.filters}>
 
             {/* SEARCH */}
+
             <div style={styles.searchBox}>
 
-              <Search size={18} />
+              <Search
+                size={18}
+                color="#777"
+              />
 
               <input
                 type="text"
@@ -185,7 +275,8 @@ const Orders = () => {
 
             </div>
 
-            {/* FILTER */}
+            {/* STATUS FILTER */}
+
             <select
               value={filterStatus}
               onChange={(e) =>
@@ -195,7 +286,6 @@ const Orders = () => {
               }
               style={styles.select}
             >
-
               <option value="all">
                 All Status
               </option>
@@ -212,6 +302,10 @@ const Orders = () => {
                 Preparing
               </option>
 
+              <option value="ready_for_delivery">
+                Ready for Delivery
+              </option>
+
               <option value="out_for_delivery">
                 Out for Delivery
               </option>
@@ -220,6 +314,13 @@ const Orders = () => {
                 Delivered
               </option>
 
+              <option value="cancelled">
+                Cancelled
+              </option>
+
+              <option value="refunded">
+                Refunded
+              </option>
             </select>
 
           </div>
@@ -227,6 +328,7 @@ const Orders = () => {
         </div>
 
         {/* ================= TABLE ================= */}
+
         <div style={styles.tableContainer}>
 
           <table style={styles.table}>
@@ -252,6 +354,10 @@ const Orders = () => {
                 </th>
 
                 <th style={styles.tableHeader}>
+                  Payment
+                </th>
+
+                <th style={styles.tableHeader}>
                   Status
                 </th>
 
@@ -269,96 +375,173 @@ const Orders = () => {
 
             <tbody>
 
-              {filteredOrders.map(
-                (order) => (
+              {filteredOrders.length === 0 ? (
 
-                  <tr
-                    key={order.id}
-                    style={styles.tableRow}
+                <tr>
+
+                  <td
+                    colSpan="8"
+                    style={styles.emptyState}
                   >
+                    No orders found.
+                  </td>
 
-                    <td
-                      style={{
-                        ...styles.tableCell,
-                        color: '#ff4757',
-                        fontWeight: '600'
-                      }}
-                    >
+                </tr>
 
-                      {order.id}
+              ) : (
 
-                    </td>
+                filteredOrders.map(
+                  (order, index) => {
 
-                    <td style={styles.tableCell}>
-                      {order.customer}
-                    </td>
+                    const orderId =
+                      order.order_number ||
+                      order.order_id ||
+                      order.id ||
+                      `ORDER-${index + 1}`;
 
-                    <td style={styles.tableCell}>
-                      {order.restaurant}
-                    </td>
+                    const customer =
+                      order.customer_name ||
+                      order.full_name ||
+                      order.customer ||
+                      '-';
 
-                    <td
-                      style={{
-                        ...styles.tableCell,
-                        fontWeight: '600'
-                      }}
-                    >
+                    const restaurant =
+                      order.restaurant_name ||
+                      order.restaurant ||
+                      '-';
 
-                      ₹{order.amount}
+                    const amount =
+                      order.total_amount ??
+                      order.total ??
+                      order.amount ??
+                      0;
 
-                    </td>
+                    const status =
+                      order.order_status ||
+                      order.status ||
+                      'unknown';
 
-                    <td style={styles.tableCell}>
+                    const paymentStatus =
+                      order.payment_status ||
+                      '-';
 
-                      <span
-                        style={{
-                          ...styles.statusBadge,
+                    const date =
+                      order.created_at ||
+                      order.date;
 
-                          background:
-                            `${getStatusColor(
-                              order.status
-                            )}20`,
+                    return (
+                      <tr
+                        key={
+                          order.order_id ||
+                          order.id ||
+                          index
+                        }
+                        style={styles.tableRow}
+                      >
 
-                          color:
-                            getStatusColor(
-                              order.status
+                        <td
+                          style={{
+                            ...styles.tableCell,
+                            color: '#ff4757',
+                            fontWeight: '600'
+                          }}
+                        >
+                          {orderId}
+                        </td>
+
+                        <td
+                          style={styles.tableCell}
+                        >
+                          {customer}
+                        </td>
+
+                        <td
+                          style={styles.tableCell}
+                        >
+                          {restaurant}
+                        </td>
+
+                        <td
+                          style={{
+                            ...styles.tableCell,
+                            fontWeight: '600'
+                          }}
+                        >
+                          {formatCurrency(amount)}
+                        </td>
+
+                        <td
+                          style={styles.tableCell}
+                        >
+                          <span
+                            style={{
+                              ...styles.paymentBadge,
+                              ...(paymentStatus ===
+                              'paid'
+                                ? styles.paidBadge
+                                : {})
+                            }}
+                          >
+                            {String(
+                              paymentStatus
                             )
-                        }}
-                      >
+                              .replace(
+                                /_/g,
+                                ' '
+                              )
+                              .toUpperCase()}
+                          </span>
+                        </td>
 
-                        {order.status
-                          .replaceAll('_', ' ')
-                          .toUpperCase()}
+                        <td
+                          style={styles.tableCell}
+                        >
+                          <span
+                            className={getStatusClass(
+                              status
+                            )}
+                            style={{
+                              ...styles.statusBadge,
+                              ...getStatusStyle(
+                                status
+                              )
+                            }}
+                          >
+                            {getStatusText(
+                              status
+                            )}
+                          </span>
+                        </td>
 
-                      </span>
+                        <td
+                          style={styles.tableCell}
+                        >
+                          {formatDate(date)}
+                        </td>
 
-                    </td>
+                        <td
+                          style={styles.tableCell}
+                        >
+                          <button
+                            style={
+                              styles.viewButton
+                            }
+                            onClick={() =>
+                              setSelectedOrder(
+                                order
+                              )
+                            }
+                          >
+                            <Eye size={16} />
+                            View
+                          </button>
+                        </td>
 
-                    <td style={styles.tableCell}>
-
-                      {new Date(
-                        order.date
-                      ).toLocaleDateString()}
-
-                    </td>
-
-                    <td style={styles.tableCell}>
-
-                      <button
-                        style={styles.viewButton}
-                      >
-
-                        <Eye size={16} />
-
-                        View
-
-                      </button>
-
-                    </td>
-
-                  </tr>
-
+                      </tr>
+                    );
+                  }
                 )
+
               )}
 
             </tbody>
@@ -369,13 +552,217 @@ const Orders = () => {
 
       </div>
 
+      {/* ================= ORDER MODAL ================= */}
+
+      {selectedOrder && (
+
+        <div
+          style={styles.modalOverlay}
+          onClick={() =>
+            setSelectedOrder(null)
+          }
+        >
+
+          <div
+            style={styles.modal}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
+            <div style={styles.modalHeader}>
+
+              <div>
+                <h2>
+                  Order Details
+                </h2>
+
+                <p style={styles.modalSubtitle}>
+                  {selectedOrder.order_number ||
+                    selectedOrder.order_id ||
+                    selectedOrder.id ||
+                    '-'}
+                </p>
+              </div>
+
+              <button
+                style={styles.closeButton}
+                onClick={() =>
+                  setSelectedOrder(null)
+                }
+              >
+                <X size={20} />
+              </button>
+
+            </div>
+
+            <div style={styles.detailsGrid}>
+
+              <div>
+                <span style={styles.detailLabel}>
+                  Customer
+                </span>
+
+                <strong>
+                  {selectedOrder.customer_name ||
+                    selectedOrder.full_name ||
+                    selectedOrder.customer ||
+                    '-'}
+                </strong>
+              </div>
+
+              <div>
+                <span style={styles.detailLabel}>
+                  Restaurant
+                </span>
+
+                <strong>
+                  {selectedOrder.restaurant_name ||
+                    selectedOrder.restaurant ||
+                    '-'}
+                </strong>
+              </div>
+
+              <div>
+                <span style={styles.detailLabel}>
+                  Amount
+                </span>
+
+                <strong>
+                  {formatCurrency(
+                    selectedOrder.total_amount ??
+                    selectedOrder.total ??
+                    selectedOrder.amount
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                <span style={styles.detailLabel}>
+                  Payment Method
+                </span>
+
+                <strong>
+                  {selectedOrder.payment_method ||
+                    '-'}
+                </strong>
+              </div>
+
+              <div>
+                <span style={styles.detailLabel}>
+                  Payment Status
+                </span>
+
+                <strong>
+                  {selectedOrder.payment_status ||
+                    '-'}
+                </strong>
+              </div>
+
+              <div>
+                <span style={styles.detailLabel}>
+                  Order Status
+                </span>
+
+                <strong>
+                  {getStatusText(
+                    selectedOrder.order_status ||
+                    selectedOrder.status
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                <span style={styles.detailLabel}>
+                  Created
+                </span>
+
+                <strong>
+                  {formatDateTime(
+                    selectedOrder.created_at
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                <span style={styles.detailLabel}>
+                  Delivery Time
+                </span>
+
+                <strong>
+                  {formatDateTime(
+                    selectedOrder.estimated_delivery_time
+                  )}
+                </strong>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
     </div>
-
   );
-
 };
 
-// ================= STYLES =================
+// ================= STATUS STYLES =================
+
+const getStatusStyle = (status) => {
+  const stylesMap = {
+    pending: {
+      background: '#fff3cd',
+      color: '#856404'
+    },
+
+    confirmed: {
+      background: '#d1ecf1',
+      color: '#0c5460'
+    },
+
+    preparing: {
+      background: '#ffe5d0',
+      color: '#c44d00'
+    },
+
+    ready_for_delivery: {
+      background: '#e2d9f3',
+      color: '#563d7c'
+    },
+
+    out_for_delivery: {
+      background: '#d6e9ff',
+      color: '#1557a6'
+    },
+
+    delivered: {
+      background: '#d4edda',
+      color: '#155724'
+    },
+
+    cancelled: {
+      background: '#f8d7da',
+      color: '#721c24'
+    },
+
+    refunded: {
+      background: '#e2e3e5',
+      color: '#383d41'
+    }
+  };
+
+  return (
+    stylesMap[status] || {
+      background: '#e2e3e5',
+      color: '#383d41'
+    }
+  );
+};
+
+// ================= PAGE STYLES =================
+
 const styles = {
 
   container: {
@@ -385,18 +772,37 @@ const styles = {
   },
 
   header: {
-    marginBottom: '24px'
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '20px',
+    marginBottom: '24px',
+    flexWrap: 'wrap'
   },
 
   heading: {
     fontSize: '30px',
     color: '#2c3e50',
-    marginBottom: '8px'
+    margin: 0
   },
 
   subHeading: {
     color: '#7f8c8d',
-    fontSize: '14px'
+    fontSize: '14px',
+    marginTop: '8px'
+  },
+
+  refreshButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    border: 'none',
+    borderRadius: '8px',
+    background: '#1a1a2e',
+    color: '#fff',
+    cursor: 'pointer',
+    fontWeight: '600'
   },
 
   card: {
@@ -413,13 +819,20 @@ const styles = {
     alignItems: 'center',
     padding: '20px 24px',
     borderBottom: '1px solid #eee',
-    flexWrap: 'wrap',
-    gap: '16px'
+    gap: '16px',
+    flexWrap: 'wrap'
   },
 
   cardTitle: {
+    margin: 0,
     fontSize: '20px',
     color: '#2c3e50'
+  },
+
+  countText: {
+    margin: '5px 0 0',
+    fontSize: '13px',
+    color: '#888'
   },
 
   filters: {
@@ -432,7 +845,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '8px 12px',
+    padding: '9px 12px',
     border: '1px solid #ddd',
     borderRadius: '8px',
     background: '#fff'
@@ -442,15 +855,16 @@ const styles = {
     border: 'none',
     outline: 'none',
     fontSize: '14px',
-    width: '200px'
+    width: '210px'
   },
 
   select: {
-    padding: '8px 12px',
+    padding: '9px 12px',
     border: '1px solid #ddd',
     borderRadius: '8px',
     background: '#fff',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    fontSize: '14px'
   },
 
   tableContainer: {
@@ -468,10 +882,11 @@ const styles = {
 
   tableHeader: {
     textAlign: 'left',
-    padding: '16px 24px',
+    padding: '15px 18px',
     color: '#7f8c8d',
     fontWeight: '600',
-    fontSize: '14px'
+    fontSize: '13px',
+    whiteSpace: 'nowrap'
   },
 
   tableRow: {
@@ -479,163 +894,131 @@ const styles = {
   },
 
   tableCell: {
-    padding: '16px 24px',
+    padding: '15px 18px',
     color: '#2c3e50',
-    fontSize: '14px'
+    fontSize: '14px',
+    whiteSpace: 'nowrap'
   },
 
   statusBadge: {
     display: 'inline-block',
-    padding: '6px 12px',
+    padding: '6px 10px',
     borderRadius: '20px',
-    fontSize: '12px',
-    fontWeight: '600'
+    fontSize: '11px',
+    fontWeight: '700',
+    whiteSpace: 'nowrap'
+  },
+
+  paymentBadge: {
+    display: 'inline-block',
+    padding: '5px 9px',
+    borderRadius: '15px',
+    background: '#f1f2f6',
+    color: '#666',
+    fontSize: '10px',
+    fontWeight: '700'
+  },
+
+  paidBadge: {
+    background: '#d4edda',
+    color: '#155724'
   },
 
   viewButton: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    padding: '8px 12px',
+    padding: '7px 11px',
     background: '#f1f2f6',
     border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer'
+    borderRadius: '7px',
+    cursor: 'pointer',
+    fontWeight: '600'
   },
 
-  loaderContainer: {
+  emptyState: {
+    padding: '50px',
+    textAlign: 'center',
+    color: '#777'
+  },
+
+  loading: {
+    minHeight: '70vh',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color: '#666'
+  },
+
+  loadingIcon: {
+    animation: 'spin 1s linear infinite'
+  },
+
+  spinning: {
+    animation: 'spin 1s linear infinite'
+  },
+
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.5)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100vh'
+    padding: '20px',
+    zIndex: 1000
   },
 
-  loader: {
-    width: '50px',
-    height: '50px',
-    border: '5px solid #f3f3f3',
-    borderTop: '5px solid #ff4757',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite'
+  modal: {
+    width: '100%',
+    maxWidth: '650px',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    background: '#fff',
+    borderRadius: '16px',
+    padding: '24px',
+    boxShadow:
+      '0 20px 60px rgba(0,0,0,0.25)'
+  },
+
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    borderBottom: '1px solid #eee',
+    paddingBottom: '18px',
+    marginBottom: '20px'
+  },
+
+  modalSubtitle: {
+    margin: '5px 0 0',
+    color: '#ff4757',
+    fontWeight: '600'
+  },
+
+  closeButton: {
+    border: 'none',
+    background: '#f1f2f6',
+    borderRadius: '8px',
+    padding: '7px',
+    cursor: 'pointer'
+  },
+
+  detailsGrid: {
+    display: 'grid',
+    gridTemplateColumns:
+      'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '20px'
+  },
+
+  detailLabel: {
+    display: 'block',
+    fontSize: '12px',
+    color: '#888',
+    marginBottom: '5px'
   }
 
 };
 
 export default Orders;
-// admin-panel/src/pages/Orders.js
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-
-const API_URL = 'http://localhost:5000/api';
-
-export default function Orders() {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all');
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        fetchOrders();
-    }, []);
-
-    const fetchOrders = async () => {
-        try {
-            const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`${API_URL}/admin/orders`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (response.data.success) {
-                setOrders(response.data.data);
-            }
-        } catch (error) {
-            toast.error('Failed to fetch orders');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const filteredOrders = filter === 'all' ? orders : orders.filter(o => o.order_status === filter);
-
-    if (loading) return <div style={styles.loading}>Loading orders...</div>;
-
-    const getStatusColor = (status) => {
-        switch(status) {
-            case 'pending': return '#ffc107';
-            case 'confirmed': return '#17a2b8';
-            case 'preparing': return '#fd7e14';
-            case 'out_for_delivery': return '#6f42c1';
-            case 'delivered': return '#28a745';
-            default: return '#6c757d';
-        }
-    };
-
-    return (
-        <div style={styles.container}>
-            <div style={styles.header}>
-                <button onClick={() => navigate('/dashboard')} style={styles.backBtn}>← Back to Dashboard</button>
-                <h1 style={styles.title}>📦 Order Management</h1>
-            </div>
-
-            <div style={styles.filters}>
-                <button onClick={() => setFilter('all')} style={{...styles.filterBtn, ...(filter === 'all' ? styles.activeFilter : {})}}>All</button>
-                <button onClick={() => setFilter('pending')} style={{...styles.filterBtn, ...(filter === 'pending' ? styles.activeFilter : {})}}>Pending</button>
-                <button onClick={() => setFilter('confirmed')} style={{...styles.filterBtn, ...(filter === 'confirmed' ? styles.activeFilter : {})}}>Confirmed</button>
-                <button onClick={() => setFilter('preparing')} style={{...styles.filterBtn, ...(filter === 'preparing' ? styles.activeFilter : {})}}>Preparing</button>
-                <button onClick={() => setFilter('out_for_delivery')} style={{...styles.filterBtn, ...(filter === 'out_for_delivery' ? styles.activeFilter : {})}}>Out for Delivery</button>
-                <button onClick={() => setFilter('delivered')} style={{...styles.filterBtn, ...(filter === 'delivered' ? styles.activeFilter : {})}}>Delivered</button>
-            </div>
-
-            <div style={styles.tableContainer}>
-                <table style={styles.table}>
-                    <thead>
-                        <tr>
-                            <th>Order #</th>
-                            <th>Customer</th>
-                            <th>Restaurant</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredOrders.map(order => (
-                            <tr key={order.order_id}>
-                                <td>{order.order_number}</td>
-                                <td>{order.customer_name || 'Guest'}</td>
-                                <td>{order.restaurant_name}</td>
-                                <td>₹{order.total_amount}</td>
-                                <td>
-                                    <span style={{...styles.badge, backgroundColor: getStatusColor(order.order_status)}}>
-                                        {order.order_status}
-                                    </span>
-                                </td>
-                                <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                                <td>
-                                    <button style={styles.viewBtn}>View Details</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-}
-
-const styles = {
-    container: { maxWidth: '1400px', margin: '0 auto', padding: '20px' },
-    loading: { textAlign: 'center', padding: '50px', fontSize: '18px', color: '#666' },
-    header: { marginBottom: '30px' },
-    backBtn: { padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginBottom: '15px' },
-    title: { fontSize: '28px', color: '#333' },
-    filters: { display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' },
-    filterBtn: { padding: '8px 16px', backgroundColor: '#f0f0f0', border: 'none', borderRadius: '20px', cursor: 'pointer' },
-    activeFilter: { backgroundColor: '#1a1a2e', color: 'white' },
-    tableContainer: { overflowX: 'auto' },
-    table: { width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' },
-    badge: { padding: '4px 8px', borderRadius: '20px', fontSize: '12px', color: 'white' },
-    viewBtn: { padding: '6px 12px', backgroundColor: '#1a1a2e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }
-};

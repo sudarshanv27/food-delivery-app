@@ -2,145 +2,97 @@
 
 import axios from 'axios';
 
-// ================= API INSTANCE =================
-const API = axios.create({
+// ======================================================
+// API CONFIGURATION
+// ======================================================
 
+const API = axios.create({
   baseURL:
     process.env.REACT_APP_API_URL ||
     'http://localhost:5000/api',
 
+  timeout: 15000,
+
   headers: {
+    Accept: 'application/json',
     'Content-Type': 'application/json'
-  },
-
-  timeout: 10000
-
+  }
 });
 
-// ================= REQUEST INTERCEPTOR =================
+// ======================================================
+// REQUEST INTERCEPTOR
+// ======================================================
+
 API.interceptors.request.use(
-
   (config) => {
+    const token = localStorage.getItem('adminToken');
 
-    // Get admin token
-    const token =
-      localStorage.getItem('adminToken');
-
-    // Add token if exists
     if (token) {
+      config.headers = config.headers || {};
 
-      config.headers.Authorization =
-        `Bearer ${token}`;
-
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
-
   },
-
   (error) => {
-
     return Promise.reject(error);
-
   }
-
 );
 
-// ================= RESPONSE INTERCEPTOR =================
+// ======================================================
+// RESPONSE INTERCEPTOR
+// ======================================================
+
 API.interceptors.response.use(
-
-  // Success response
   (response) => {
-
     return response;
-
   },
 
-  // Error response
   (error) => {
+    const status = error?.response?.status;
 
-    // Unauthorized
-    if (error.response?.status === 401) {
+    // ==================================================
+    // UNAUTHORIZED
+    // ==================================================
 
-      // Clear storage
+    if (status === 401) {
       localStorage.removeItem('adminToken');
-
       localStorage.removeItem('adminUser');
+      localStorage.removeItem('admin');
 
-      // Redirect login
-      window.location.href = '/login';
-
+      // Prevent redirect loops.
+      if (window.location.pathname !== '/login') {
+        window.location.replace('/login');
+      }
     }
 
-    // Forbidden
-    if (error.response?.status === 403) {
+    // ==================================================
+    // FORBIDDEN
+    // ==================================================
 
+    if (status === 403) {
       console.error(
-        '❌ Access Denied'
+        'FoodieDash Admin access denied:',
+        error?.response?.data || error.message
       );
-
     }
 
-    // Server error
-    if (error.response?.status >= 500) {
+    // ==================================================
+    // SERVER ERROR
+    // ==================================================
 
+    if (status >= 500) {
       console.error(
-        '❌ Server Error'
+        'FoodieDash API server error:',
+        error?.response?.data || error.message
       );
-
     }
 
+    // Always allow individual pages/services
+    // to handle the original error.
     return Promise.reject(error);
-
   }
-
 );
 
-// ================= HELPER METHODS =================
-
-// GET
-export const getData = async (url, params = {}) => {
-
-  const response = await API.get(url, {
-    params
-  });
-
-  return response.data;
-
-};
-
-// POST
-export const postData = async (url, data = {}) => {
-
-  const response = await API.post(
-    url,
-    data
-  );
-
-  return response.data;
-
-};
-
-// PUT
-export const updateData = async (url, data = {}) => {
-
-  const response = await API.put(
-    url,
-    data
-  );
-
-  return response.data;
-
-};
-
-// DELETE
-export const deleteData = async (url) => {
-
-  const response = await API.delete(url);
-
-  return response.data;
-
-};
-
-// ================= EXPORT =================
 export default API;

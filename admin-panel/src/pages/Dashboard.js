@@ -1,713 +1,767 @@
-// src/pages/Dashboard.js
+// admin-panel/src/pages/Dashboard.js
 
-import React, { useState } from 'react';
-
+import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Users,
+  ArrowRight,
+  DollarSign,
+  RefreshCw,
   ShoppingBag,
   Store,
-  DollarSign,
-  Eye,
-  Search,
-  Download,
-  RefreshCw
+  Truck,
+  Users
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
+import API from '../services/api';
 import './Dashboard.css';
 
+const DEFAULT_STATS = {
+  totalOrders: 0,
+  totalUsers: 0,
+  totalRestaurants: 0,
+  totalRevenue: 0,
+  pendingOrders: 0,
+  completedOrders: 0,
+  cancelledOrders: 0,
+  avgOrderValue: 0
+};
+
 const Dashboard = () => {
+  const navigate = useNavigate();
 
-  // ================= STATS =================
-  const [stats] = useState({
-    totalOrders: 1248,
-    totalUsers: 3456,
-    totalRestaurants: 128,
-    totalRevenue: 456789,
-    pendingOrders: 42,
-    completedOrders: 1156,
-    cancelledOrders: 50,
-    avgOrderValue: 366
-  });
+  const [stats, setStats] = useState(DEFAULT_STATS);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentUsers, setRecentUsers] = useState([]);
 
-  // ================= ORDERS =================
-  const [recentOrders] = useState([
-    {
-      id: 'ORD001',
-      customer: 'John Doe',
-      restaurant: 'Pizza Paradise',
-      amount: 450,
-      status: 'delivered',
-      date: '2024-01-15',
-      items: 3
-    },
-    {
-      id: 'ORD002',
-      customer: 'Jane Smith',
-      restaurant: 'Burger Hub',
-      amount: 320,
-      status: 'pending',
-      date: '2024-01-15',
-      items: 2
-    },
-    {
-      id: 'ORD003',
-      customer: 'Mike Johnson',
-      restaurant: 'Sushi Master',
-      amount: 680,
-      status: 'preparing',
-      date: '2024-01-14',
-      items: 4
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchDashboard = useCallback(async (isRefresh = false) => {
+    try {
+      setError('');
+
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const results = await Promise.allSettled([
+        API.get('/admin/stats'),
+        API.get('/admin/orders/recent'),
+        API.get('/admin/users/recent')
+      ]);
+
+      const [statsResult, ordersResult, usersResult] = results;
+
+      let successfulRequests = 0;
+      const failedRequests = [];
+
+      // ================= STATS =================
+
+      if (statsResult.status === 'fulfilled') {
+        successfulRequests += 1;
+
+        const responseData = statsResult.value?.data;
+
+        if (responseData?.success) {
+          const serverStats =
+            responseData.stats ||
+            responseData.data ||
+            {};
+
+          setStats({
+            ...DEFAULT_STATS,
+            ...serverStats
+          });
+        } else {
+          failedRequests.push(
+            responseData?.message || 'Dashboard statistics failed'
+          );
+        }
+      } else {
+        failedRequests.push(
+          statsResult.reason?.response?.data?.message ||
+          statsResult.reason?.message ||
+          'Unable to load dashboard statistics'
+        );
+      }
+
+      // ================= RECENT ORDERS =================
+
+      if (ordersResult.status === 'fulfilled') {
+        successfulRequests += 1;
+
+        const responseData = ordersResult.value?.data;
+
+        if (responseData?.success) {
+          setRecentOrders(
+            Array.isArray(responseData.orders)
+              ? responseData.orders
+              : Array.isArray(responseData.data)
+                ? responseData.data
+                : []
+          );
+        } else {
+          failedRequests.push(
+            responseData?.message || 'Recent orders failed'
+          );
+        }
+      } else {
+        failedRequests.push(
+          ordersResult.reason?.response?.data?.message ||
+          ordersResult.reason?.message ||
+          'Unable to load recent orders'
+        );
+      }
+
+      // ================= RECENT USERS =================
+
+      if (usersResult.status === 'fulfilled') {
+        successfulRequests += 1;
+
+        const responseData = usersResult.value?.data;
+
+        if (responseData?.success) {
+          setRecentUsers(
+            Array.isArray(responseData.users)
+              ? responseData.users
+              : Array.isArray(responseData.data)
+                ? responseData.data
+                : []
+          );
+        } else {
+          failedRequests.push(
+            responseData?.message || 'Recent users failed'
+          );
+        }
+      } else {
+        failedRequests.push(
+          usersResult.reason?.response?.data?.message ||
+          usersResult.reason?.message ||
+          'Unable to load recent users'
+        );
+      }
+
+      // ================= ERROR HANDLING =================
+
+      if (successfulRequests === 0) {
+        const message =
+          failedRequests[0] ||
+          'Unable to connect to the FoodieDash backend.';
+
+        setError(message);
+
+        toast.error(message);
+      } else if (failedRequests.length > 0) {
+        setError(
+          'Some dashboard information could not be loaded. Please check the backend connection.'
+        );
+
+        if (isRefresh) {
+          toast.error('Some dashboard data could not be refreshed.');
+        }
+      } else if (isRefresh) {
+        toast.success('Dashboard refreshed successfully.');
+      }
+    } catch (err) {
+      console.error('FoodieDash dashboard error:', err);
+
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to load dashboard data.';
+
+      setError(message);
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  ]);
+  }, []);
 
-  // ================= STATES =================
-  const [searchTerm, setSearchTerm] =
-    useState('');
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
 
-  const [filterStatus, setFilterStatus] =
-    useState('all');
+  // ================= HELPERS =================
 
-  const [selectedOrder, setSelectedOrder] =
-    useState(null);
+  const formatNumber = (value) => {
+    const number = Number(value);
 
-  const [showOrderModal, setShowOrderModal] =
-    useState(false);
-
-  // ================= STATUS BADGE =================
-  const getStatusBadge = (status) => {
-
-    const colors = {
-      pending: '#ffa502',
-      preparing: '#ff6348',
-      out_for_delivery: '#1e90ff',
-      delivered: '#2ed573',
-      cancelled: '#ff4757'
-    };
-
-    return (
-
-      <span
-        className={`status-badge status-${status}`}
-        style={{
-          background:
-            `${colors[status]}20`,
-          color: colors[status]
-        }}
-      >
-
-        {status.replaceAll('_', ' ').toUpperCase()}
-
-      </span>
-
-    );
-
+    return Number.isFinite(number)
+      ? number.toLocaleString('en-IN')
+      : '0';
   };
 
-  // ================= FILTERED ORDERS =================
-  const filteredOrders = recentOrders.filter(
-    (order) => {
+  const formatCurrency = (value) => {
+    const number = Number(value);
 
-      const matchesStatus =
-        filterStatus === 'all' ||
-        order.status === filterStatus;
+    return `₹${(
+      Number.isFinite(number) ? number : 0
+    ).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
 
-      const matchesSearch =
-        order.id
-          .toLowerCase()
-          .includes(
-            searchTerm.toLowerCase()
-          ) ||
-        order.customer
-          .toLowerCase()
-          .includes(
-            searchTerm.toLowerCase()
-          );
-
-      return matchesStatus && matchesSearch;
-
+  const formatDate = (value) => {
+    if (!value) {
+      return '-';
     }
-  );
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getOrderId = (order) => {
+    return (
+      order?.order_number ||
+      order?.order_id ||
+      order?.id ||
+      '-'
+    );
+  };
+
+  const getCustomerName = (order) => {
+    return (
+      order?.customer ||
+      order?.customer_name ||
+      order?.full_name ||
+      order?.name ||
+      '-'
+    );
+  };
+
+  const getRestaurantName = (order) => {
+    return (
+      order?.restaurant ||
+      order?.restaurant_name ||
+      '-'
+    );
+  };
+
+  const getOrderAmount = (order) => {
+    return (
+      order?.amount ??
+      order?.total_amount ??
+      order?.total ??
+      0
+    );
+  };
+
+  const getOrderStatus = (order) => {
+    return (
+      order?.status ||
+      order?.order_status ||
+      'unknown'
+    );
+  };
+
+  const getStatusText = (status) => {
+    if (!status) {
+      return 'Unknown';
+    }
+
+    return String(status)
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  };
+
+  const getStatusClass = (status) => {
+    if (!status) {
+      return 'status-default';
+    }
+
+    return `status-${String(status)
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/_/g, '-')}`;
+  };
+
+  const getUserName = (user) => {
+    return (
+      user?.name ||
+      user?.full_name ||
+      user?.username ||
+      'Unknown User'
+    );
+  };
+
+  const getUserInitial = (user) => {
+    const name = getUserName(user);
+
+    return name.charAt(0).toUpperCase();
+  };
+
+  const getUserType = (user) => {
+    return (
+      user?.user_type ||
+      user?.userType ||
+      user?.role ||
+      'customer'
+    );
+  };
+
+  // ================= LOADING =================
+
+  if (loading) {
+    return (
+      <div className="dashboard-loading">
+        <div className="dashboard-loading-icon">
+          <RefreshCw
+            size={30}
+            className="loading-spinner"
+          />
+        </div>
+
+        <h2>Loading Dashboard</h2>
+
+        <p>
+          Connecting to your FoodieDash platform...
+        </p>
+      </div>
+    );
+  }
 
   // ================= UI =================
-  return (
 
+  return (
     <div className="dashboard-container">
 
-      {/* ================= HEADER ================= */}
+      {/* ================= PAGE HEADER ================= */}
+
       <div className="dashboard-header">
-
         <div>
-
-          <h1>
-            Dashboard
-          </h1>
+          <h1>Admin Dashboard</h1>
 
           <p>
-            Welcome back! Here's what's happening today.
+            Monitor your FoodieDash platform from one place.
           </p>
-
         </div>
 
-        <div className="header-actions">
+        <button
+          type="button"
+          className="btn-refresh"
+          onClick={() => fetchDashboard(true)}
+          disabled={refreshing}
+        >
+          <RefreshCw
+            size={17}
+            className={refreshing ? 'loading-spinner' : ''}
+          />
 
-          <button
-            className="btn-refresh"
-            onClick={() =>
-              window.location.reload()
-            }
-          >
-
-            <RefreshCw size={18} />
-
-            Refresh
-
-          </button>
-
-          <button className="btn-export">
-
-            <Download size={18} />
-
-            Export Report
-
-          </button>
-
-        </div>
-
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </div>
 
-      {/* ================= STATS ================= */}
+      {/* ================= CONNECTION ERROR ================= */}
+
+      {error && (
+        <div
+          className="dashboard-error"
+          role="alert"
+        >
+          <div className="dashboard-error-content">
+            <strong>Dashboard connection problem</strong>
+
+            <span>
+              {error}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="dashboard-error-retry"
+            onClick={() => fetchDashboard(true)}
+            disabled={refreshing}
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {/* ================= MAIN STATISTICS ================= */}
+
       <div className="stats-grid">
 
-        {/* ORDERS */}
         <div className="stat-card">
-
-          <div
-            className="stat-icon"
-            style={{
-              background: '#ffe8e8',
-              color: '#ff4757'
-            }}
-          >
-
+          <div className="stat-icon orders-icon">
             <ShoppingBag size={24} />
-
           </div>
 
           <div className="stat-info">
-
             <h3>Total Orders</h3>
 
             <p className="stat-value">
-              {stats.totalOrders.toLocaleString()}
+              {formatNumber(stats.totalOrders)}
             </p>
 
-            <span className="stat-change positive">
-              +12% this month
+            <span className="stat-label">
+              All platform orders
             </span>
-
           </div>
-
         </div>
 
-        {/* USERS */}
         <div className="stat-card">
-
-          <div
-            className="stat-icon"
-            style={{
-              background: '#e8f5e8',
-              color: '#2ed573'
-            }}
-          >
-
+          <div className="stat-icon users-icon">
             <Users size={24} />
-
           </div>
 
           <div className="stat-info">
-
             <h3>Total Users</h3>
 
             <p className="stat-value">
-              {stats.totalUsers.toLocaleString()}
+              {formatNumber(stats.totalUsers)}
             </p>
 
-            <span className="stat-change positive">
-              +8% this month
+            <span className="stat-label">
+              Registered customers
             </span>
-
           </div>
-
         </div>
 
-        {/* RESTAURANTS */}
         <div className="stat-card">
-
-          <div
-            className="stat-icon"
-            style={{
-              background: '#e8e8ff',
-              color: '#1e90ff'
-            }}
-          >
-
+          <div className="stat-icon restaurants-icon">
             <Store size={24} />
-
           </div>
 
           <div className="stat-info">
-
             <h3>Restaurants</h3>
 
             <p className="stat-value">
-              {stats.totalRestaurants}
+              {formatNumber(stats.totalRestaurants)}
             </p>
 
-            <span className="stat-change positive">
-              +5 new
+            <span className="stat-label">
+              Platform restaurants
             </span>
-
           </div>
-
         </div>
 
-        {/* REVENUE */}
         <div className="stat-card">
-
-          <div
-            className="stat-icon"
-            style={{
-              background: '#fff5e8',
-              color: '#ffa502'
-            }}
-          >
-
+          <div className="stat-icon revenue-icon">
             <DollarSign size={24} />
-
           </div>
 
           <div className="stat-info">
-
             <h3>Total Revenue</h3>
 
             <p className="stat-value">
-              ₹
-              {stats.totalRevenue.toLocaleString()}
+              {formatCurrency(stats.totalRevenue)}
             </p>
 
-            <span className="stat-change positive">
-              +18% this month
+            <span className="stat-label">
+              Delivered order revenue
             </span>
-
           </div>
-
         </div>
 
       </div>
 
-      {/* ================= ORDERS SECTION ================= */}
-      <div className="dashboard-card">
+      {/* ================= SECONDARY STATISTICS ================= */}
 
-        <div className="card-header">
+      <div className="secondary-stats">
 
-          <h2>
-            Recent Orders
-          </h2>
+        <div className="secondary-card">
+          <span>Pending Orders</span>
 
-          <div className="card-filters">
-
-            {/* SEARCH */}
-            <div className="search-box">
-
-              <Search size={18} />
-
-              <input
-                type="text"
-                placeholder="Search orders..."
-                value={searchTerm}
-                onChange={(e) =>
-                  setSearchTerm(
-                    e.target.value
-                  )
-                }
-              />
-
-            </div>
-
-            {/* FILTER */}
-            <select
-              className="filter-select"
-              value={filterStatus}
-              onChange={(e) =>
-                setFilterStatus(
-                  e.target.value
-                )
-              }
-            >
-
-              <option value="all">
-                All Status
-              </option>
-
-              <option value="pending">
-                Pending
-              </option>
-
-              <option value="preparing">
-                Preparing
-              </option>
-
-              <option value="out_for_delivery">
-                Out for Delivery
-              </option>
-
-              <option value="delivered">
-                Delivered
-              </option>
-
-            </select>
-
-          </div>
-
+          <strong>
+            {formatNumber(stats.pendingOrders)}
+          </strong>
         </div>
 
-        {/* ================= TABLE ================= */}
+        <div className="secondary-card">
+          <span>Completed Orders</span>
+
+          <strong>
+            {formatNumber(stats.completedOrders)}
+          </strong>
+        </div>
+
+        <div className="secondary-card">
+          <span>Cancelled Orders</span>
+
+          <strong>
+            {formatNumber(stats.cancelledOrders)}
+          </strong>
+        </div>
+
+        <div className="secondary-card">
+          <span>Average Order Value</span>
+
+          <strong>
+            {formatCurrency(stats.avgOrderValue)}
+          </strong>
+        </div>
+
+      </div>
+
+      {/* ================= RECENT ORDERS ================= */}
+
+      <section className="dashboard-card">
+
+        <div className="card-header">
+          <div>
+            <h2>Recent Orders</h2>
+
+            <p>
+              Latest orders placed on the platform
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="view-all-btn"
+            onClick={() => navigate('/orders')}
+          >
+            <span>View All</span>
+            <ArrowRight size={16} />
+          </button>
+        </div>
+
         <div className="orders-table">
 
           <table>
-
             <thead>
-
               <tr>
-
-                <th>Order ID</th>
-
+                <th>Order</th>
                 <th>Customer</th>
-
                 <th>Restaurant</th>
-
                 <th>Amount</th>
-
                 <th>Status</th>
-
                 <th>Date</th>
-
-                <th>Action</th>
-
               </tr>
-
             </thead>
 
             <tbody>
 
-              {filteredOrders.map((order) => (
-
-                <tr key={order.id}>
-
-                  <td className="order-id">
-                    {order.id}
+              {recentOrders.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="empty-state"
+                  >
+                    No recent orders found.
                   </td>
-
-                  <td>
-                    {order.customer}
-                  </td>
-
-                  <td>
-                    {order.restaurant}
-                  </td>
-
-                  <td className="amount">
-                    ₹{order.amount}
-                  </td>
-
-                  <td>
-                    {getStatusBadge(
-                      order.status
-                    )}
-                  </td>
-
-                  <td>
-                    {new Date(
-                      order.date
-                    ).toLocaleDateString()}
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="view-btn"
-                      onClick={() => {
-
-                        setSelectedOrder(order);
-
-                        setShowOrderModal(true);
-
-                      }}
-                    >
-
-                      <Eye size={16} />
-
-                      View
-
-                    </button>
-
-                  </td>
-
                 </tr>
+              ) : (
+                recentOrders.map((order, index) => {
+                  const status = getOrderStatus(order);
 
-              ))}
+                  return (
+                    <tr
+                      key={
+                        order?.order_id ||
+                        order?.id ||
+                        index
+                      }
+                    >
+                      <td className="order-id">
+                        {getOrderId(order)}
+                      </td>
+
+                      <td>
+                        {getCustomerName(order)}
+                      </td>
+
+                      <td>
+                        {getRestaurantName(order)}
+                      </td>
+
+                      <td className="amount">
+                        {formatCurrency(
+                          getOrderAmount(order)
+                        )}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`status-badge ${getStatusClass(
+                            status
+                          )}`}
+                        >
+                          {getStatusText(status)}
+                        </span>
+                      </td>
+
+                      <td>
+                        {formatDate(
+                          order?.date ||
+                          order?.created_at
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
 
             </tbody>
-
           </table>
 
         </div>
+      </section>
 
-      </div>
+      {/* ================= QUICK ACTIONS ================= */}
 
-      {/* ================= ORDER MODAL ================= */}
-      {showOrderModal && selectedOrder && (
+      <section className="dashboard-card">
 
-        <div className="modal-overlay">
-
-          <div className="modal-content">
-
-            <h2>
-              Order Details
-            </h2>
+        <div className="card-header">
+          <div>
+            <h2>Quick Actions</h2>
 
             <p>
-              <strong>ID:</strong>
-              {' '}
-              {selectedOrder.id}
+              Manage important areas of your platform
             </p>
-
-            <p>
-              <strong>Customer:</strong>
-              {' '}
-              {selectedOrder.customer}
-            </p>
-
-            <p>
-              <strong>Restaurant:</strong>
-              {' '}
-              {selectedOrder.restaurant}
-            </p>
-
-            <p>
-              <strong>Amount:</strong>
-              {' '}
-              ₹{selectedOrder.amount}
-            </p>
-
-            <p>
-              <strong>Status:</strong>
-              {' '}
-              {selectedOrder.status}
-            </p>
-
-            <button
-              className="close-btn"
-              onClick={() =>
-                setShowOrderModal(false)
-              }
-            >
-
-              Close
-
-            </button>
-
           </div>
-
         </div>
 
-      )}
+        <div className="quick-actions">
+
+          <button
+            type="button"
+            className="quick-action-btn"
+            onClick={() => navigate('/users')}
+          >
+            <span className="quick-action-icon">
+              <Users size={20} />
+            </span>
+
+            <span className="quick-action-text">
+              Manage Users
+            </span>
+
+            <ArrowRight size={17} />
+          </button>
+
+          <button
+            type="button"
+            className="quick-action-btn"
+            onClick={() => navigate('/restaurants')}
+          >
+            <span className="quick-action-icon">
+              <Store size={20} />
+            </span>
+
+            <span className="quick-action-text">
+              Manage Restaurants
+            </span>
+
+            <ArrowRight size={17} />
+          </button>
+
+          <button
+            type="button"
+            className="quick-action-btn"
+            onClick={() => navigate('/orders')}
+          >
+            <span className="quick-action-icon">
+              <ShoppingBag size={20} />
+            </span>
+
+            <span className="quick-action-text">
+              Manage Orders
+            </span>
+
+            <ArrowRight size={17} />
+          </button>
+
+          <button
+            type="button"
+            className="quick-action-btn"
+            onClick={() => navigate('/delivery-partners')}
+          >
+            <span className="quick-action-icon">
+              <Truck size={20} />
+            </span>
+
+            <span className="quick-action-text">
+              Delivery Partners
+            </span>
+
+            <ArrowRight size={17} />
+          </button>
+
+        </div>
+      </section>
+
+      {/* ================= RECENT USERS ================= */}
+
+      <section className="dashboard-card">
+
+        <div className="card-header">
+          <div>
+            <h2>Recent Users</h2>
+
+            <p>
+              Recently registered platform users
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="view-all-btn"
+            onClick={() => navigate('/users')}
+          >
+            <span>View All</span>
+            <ArrowRight size={16} />
+          </button>
+        </div>
+
+        <div className="users-list">
+
+          {recentUsers.length === 0 ? (
+            <div className="empty-state">
+              No recent users found.
+            </div>
+          ) : (
+            recentUsers.map((user, index) => (
+              <div
+                className="user-row"
+                key={
+                  user?.user_id ||
+                  user?.id ||
+                  index
+                }
+              >
+                <div className="user-avatar">
+                  {getUserInitial(user)}
+                </div>
+
+                <div className="user-info">
+                  <strong>
+                    {getUserName(user)}
+                  </strong>
+
+                  <span>
+                    {user?.email || '-'}
+                  </span>
+                </div>
+
+                <span className="user-type">
+                  {getUserType(user)}
+                </span>
+              </div>
+            ))
+          )}
+
+        </div>
+      </section>
 
     </div>
-
   );
-
 };
 
 export default Dashboard;
-// admin-panel/src/pages/Dashboard.js
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import {
-    LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
-} from 'recharts';
-
-const API_URL = 'http://localhost:5000/api';
-
-export default function Dashboard() {
-    const [stats, setStats] = useState({
-        totalUsers: 0,
-        totalRestaurants: 0,
-        todayOrders: 0,
-        todayRevenue: 0,
-        totalDeliveryPartners: 0
-    });
-    const [analytics, setAnalytics] = useState({ ordersByDay: [], topRestaurants: [] });
-    const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        fetchStats();
-        fetchAnalytics();
-    }, []);
-
-    const fetchStats = async () => {
-        try {
-            const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`${API_URL}/admin/stats`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (response.data.success) {
-                setStats(response.data.data);
-            }
-        } catch (error) {
-            toast.error('Failed to fetch stats');
-        }
-    };
-
-    const fetchAnalytics = async () => {
-        try {
-            const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`${API_URL}/admin/analytics`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (response.data.success) {
-                setAnalytics(response.data.data);
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('admin');
-        navigate('/login');
-        toast.success('Logged out');
-    };
-
-    if (loading) {
-        return <div style={styles.loading}>Loading dashboard...</div>;
-    }
-
-    const COLORS = ['#ff6b35', '#28a745', '#17a2b8', '#fd7e14', '#6f42c1'];
-
-    return (
-        <div style={styles.container}>
-            <div style={styles.header}>
-                <div>
-                    <h1 style={styles.title}>🛡️ Admin Dashboard</h1>
-                    <p style={styles.subtitle}>Manage your food delivery platform</p>
-                </div>
-                <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
-            </div>
-
-            <div style={styles.statsGrid}>
-                <div style={styles.statCard}>
-                    <div style={styles.statIcon}>👥</div>
-                    <div>
-                        <h3>Total Users</h3>
-                        <p style={styles.statNumber}>{stats.totalUsers}</p>
-                    </div>
-                </div>
-                <div style={styles.statCard}>
-                    <div style={styles.statIcon}>🏪</div>
-                    <div>
-                        <h3>Restaurants</h3>
-                        <p style={styles.statNumber}>{stats.totalRestaurants}</p>
-                    </div>
-                </div>
-                <div style={styles.statCard}>
-                    <div style={styles.statIcon}>🛵</div>
-                    <div>
-                        <h3>Delivery Partners</h3>
-                        <p style={styles.statNumber}>{stats.totalDeliveryPartners}</p>
-                    </div>
-                </div>
-                <div style={styles.statCard}>
-                    <div style={styles.statIcon}>📦</div>
-                    <div>
-                        <h3>Today's Orders</h3>
-                        <p style={styles.statNumber}>{stats.todayOrders}</p>
-                    </div>
-                </div>
-                <div style={styles.statCard}>
-                    <div style={styles.statIcon}>💰</div>
-                    <div>
-                        <h3>Today's Revenue</h3>
-                        <p style={styles.statNumber}>₹{stats.todayRevenue}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div style={styles.chartsRow}>
-                <div style={styles.chartCard}>
-                    <h3>Orders Trend (Last 7 Days)</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={analytics.ordersByDay}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis yAxisId="left" />
-                            <YAxis yAxisId="right" orientation="right" />
-                            <Tooltip />
-                            <Legend />
-                            <Line yAxisId="left" type="monotone" dataKey="count" stroke="#ff6b35" name="Orders" />
-                            <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#28a745" name="Revenue (₹)" />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-
-                <div style={styles.chartCard}>
-                    <h3>Top Restaurants</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={analytics.topRestaurants}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="order_count" fill="#ff6b35" name="Orders" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            <div style={styles.quickActions}>
-                <h3>Quick Actions</h3>
-                <div style={styles.actionButtons}>
-                    <button onClick={() => navigate('/users')} style={styles.actionBtn}>👥 Manage Users</button>
-                    <button onClick={() => navigate('/restaurants')} style={styles.actionBtn}>🏪 Manage Restaurants</button>
-                    <button onClick={() => navigate('/orders')} style={styles.actionBtn}>📦 View All Orders</button>
-                    <button onClick={() => navigate('/delivery-partners')} style={styles.actionBtn}>🛵 Delivery Partners</button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-const styles = {
-    container: { maxWidth: '1400px', margin: '0 auto', padding: '20px' },
-    loading: { textAlign: 'center', padding: '50px', fontSize: '18px', color: '#666' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' },
-    title: { fontSize: '28px', color: '#333', margin: 0 },
-    subtitle: { color: '#666', marginTop: '5px' },
-    logoutBtn: { padding: '10px 20px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' },
-    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' },
-    statCard: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '15px' },
-    statIcon: { fontSize: '40px' },
-    statNumber: { fontSize: '28px', fontWeight: 'bold', color: '#ff6b35', margin: '5px 0 0' },
-    chartsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '20px', marginBottom: '30px' },
-    chartCard: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' },
-    quickActions: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' },
-    actionButtons: { display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '15px' },
-    actionBtn: { padding: '12px 24px', backgroundColor: '#1a1a2e', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }
-};

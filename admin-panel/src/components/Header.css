@@ -1,86 +1,378 @@
+/* =========================================================
+   FoodieDash Admin Panel
+   Header
+   ========================================================= */
+
 .admin-header {
-  background: white;
-  padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #eee;
   position: sticky;
   top: 0;
-  z-index: 99;
+
+  min-height: 70px;
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 14px 24px;
+
+  background: #ffffff;
+  border-bottom: 1px solid #eeeeee;
+
+  z-index: 900;
 }
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
 
 .header-search {
   display: flex;
   align-items: center;
-  gap: 8px;
+
+  gap: 9px;
+
+  width: 320px;
+  max-width: 100%;
+
+  padding: 9px 14px;
+
   background: #f8f9fa;
-  padding: 8px 16px;
-  border-radius: 8px;
-  width: 300px;
+
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  color: #7f8c8d;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.header-search:focus-within {
+  background: #ffffff;
+
+  border-color: #ffb8be;
+
+  box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.08);
+
+  color: #ff4757;
+}
+
+.header-search svg {
+  flex-shrink: 0;
 }
 
 .header-search input {
-  border: none;
-  background: none;
-  outline: none;
   width: 100%;
+  min-width: 0;
+
+  padding: 0;
+
+  background: transparent;
+
+  border: none;
+  outline: none;
+
+  color: #2c3e50;
+
+  font-family: inherit;
+  font-size: 14px;
 }
+
+.header-search input::placeholder {
+  color: #a0a8ad;
+}
+
+.header-search input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+/* =========================================================
+   HEADER ACTIONS
+   ========================================================= */
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+
+  gap: 18px;
+
+  flex-shrink: 0;
 }
+
+/* =========================================================
+   NOTIFICATIONS
+   ========================================================= */
 
 .notification-btn {
   position: relative;
-  background: none;
-  border: none;
-  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 40px;
+  height: 40px;
+
   padding: 8px;
+
+  background: transparent;
+
+  border: none;
+  border-radius: 50%;
+
+  color: #5f6c72;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.notification-btn:hover {
+  background: #f8f9fa;
+  color: #ff4757;
+}
+
+.notification-btn:active {
+  transform: scale(0.96);
 }
 
 .notification-badge {
   position: absolute;
-  top: 0;
+
+  top: 1px;
   right: 0;
+
+  min-width: 18px;
+  height: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 5px;
+
   background: #ff4757;
-  color: white;
-  font-size: 10px;
+  color: #ffffff;
+
+  border: 2px solid #ffffff;
   border-radius: 10px;
-  padding: 2px 6px;
+
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
 }
+
+/* =========================================================
+   ADMIN PROFILE
+   ========================================================= */
 
 .admin-profile {
   display: flex;
   align-items: center;
-  gap: 12px;
+
+  gap: 10px;
+
+  min-width: 0;
+
+  cursor: default;
 }
 
 .admin-avatar {
   width: 40px;
   height: 40px;
-  background: #ff4757;
-  border-radius: 50%;
+
+  flex-shrink: 0;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
+
+  background: #ff4757;
+  color: #ffffff;
+
+  border-radius: 50%;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  box-shadow: 0 2px 6px rgba(255, 71, 87, 0.2);
 }
 
 .admin-info {
+  min-width: 0;
+
   display: flex;
   flex-direction: column;
+
+  gap: 2px;
 }
 
 .admin-name {
-  font-weight: 600;
+  max-width: 150px;
+
+  overflow: hidden;
+
   color: #2c3e50;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  line-height: 1.3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-role {
-  font-size: 12px;
+  max-width: 150px;
+
+  overflow: hidden;
+
   color: #7f8c8d;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  line-height: 1.3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  text-transform: capitalize;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1024px) {
+  .admin-header {
+    padding: 13px 20px;
+  }
+
+  .header-search {
+    width: 260px;
+  }
+
+  .header-actions {
+    gap: 12px;
+  }
+
+  .admin-name,
+  .admin-role {
+    max-width: 120px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .admin-header {
+    min-height: 60px;
+
+    padding: 10px 16px;
+
+    gap: 12px;
+  }
+
+  .header-search {
+    flex: 1;
+
+    width: auto;
+
+    padding: 8px 11px;
+  }
+
+  .header-search input {
+    font-size: 13px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .admin-profile {
+    gap: 0;
+  }
+
+  .admin-info {
+    display: none;
+  }
+
+  .admin-avatar {
+    width: 36px;
+    height: 36px;
+
+    font-size: 14px;
+  }
+
+  .notification-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .admin-header {
+    padding: 9px 12px;
+  }
+
+  .header-search {
+    max-width: none;
+  }
+
+  .header-search input {
+    font-size: 12px;
+  }
+
+  .header-search input::placeholder {
+    font-size: 11px;
+  }
+
+  .notification-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .admin-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .notification-badge {
+    min-width: 16px;
+    height: 16px;
+
+    font-size: 8px;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .header-search,
+  .notification-btn {
+    transition: none;
+  }
+
+  .notification-btn:active {
+    transform: none;
+  }
 }

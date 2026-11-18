@@ -2,6 +2,7 @@
   "name": "admin-panel",
   "version": "1.0.0",
   "private": true,
+  "description": "FoodieDash Admin Panel - Food Delivery Management Dashboard",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",

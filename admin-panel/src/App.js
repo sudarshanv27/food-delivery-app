@@ -1,5 +1,14 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes
+} from 'react-router-dom';
+
+import { Toaster } from 'react-hot-toast';
+
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
@@ -8,129 +17,176 @@ import Users from './pages/Users';
 import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
+import DeliveryPartners from './pages/DeliveryPartners';
+
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+
 import './App.css';
 
+// ======================================================
+// AUTHENTICATION
+// ======================================================
+
+const getAdminToken = () => {
+  return localStorage.getItem('adminToken');
+};
+
 const isAuthenticated = () => {
-  return localStorage.getItem('adminToken') !== null;
+  const token = getAdminToken();
+
+  return Boolean(token && token.trim());
 };
 
-const PrivateRoute = ({ children }) => {
-  return isAuthenticated() ? children : <Navigate to="/login" />;
+// ======================================================
+// PROTECTED ROUTE
+// ======================================================
+
+const ProtectedRoute = () => {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
 };
 
-const Layout = ({ children }) => {
+// ======================================================
+// AUTHENTICATED LAYOUT
+// ======================================================
+
+const AdminLayout = () => {
   return (
     <div className="app-layout">
       <Sidebar />
+
       <div className="main-content">
         <Header />
-        <div className="content-wrapper">
-          {children}
-        </div>
+
+        <main className="content-wrapper">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
 };
 
+// ======================================================
+// APP
+// ======================================================
+
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#363636',
+            color: '#ffffff',
+            borderRadius: '8px',
+            fontSize: '14px'
+          },
+          success: {
+            duration: 3000
+          },
+          error: {
+            duration: 4000
+          }
+        }}
+      />
+
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={
-          <PrivateRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </PrivateRoute>
-        } />
-        <Route path="/orders" element={
-          <PrivateRoute>
-            <Layout>
-              <Orders />
-            </Layout>
-          </PrivateRoute>
-        } />
-        <Route path="/restaurants" element={
-          <PrivateRoute>
-            <Layout>
-              <Restaurants />
-            </Layout>
-          </PrivateRoute>
-        } />
-        <Route path="/users" element={
-          <PrivateRoute>
-            <Layout>
-              <Users />
-            </Layout>
-          </PrivateRoute>
-        } />
-        <Route path="/notifications" element={
-          <PrivateRoute>
-            <Layout>
-              <Notifications />
-            </Layout>
-          </PrivateRoute>
-        } />
-        <Route path="/settings" element={
-          <PrivateRoute>
-            <Layout>
-              <Settings />
-            </Layout>
-          </PrivateRoute>
-        } />
-        <Route path="/analytics" element={
-          <PrivateRoute>
-            <Layout>
-              <Analytics />
-            </Layout>
-          </PrivateRoute>
-        } />
-      </Routes>
-    </Router>
-  );
-}
 
-export default App;
-// admin-panel/src/App.js
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Users from './pages/Users';
-import Restaurants from './pages/Restaurants';
-import Orders from './pages/Orders';
-import DeliveryPartners from './pages/DeliveryPartners';
+        {/* ==================================================
+            PUBLIC ROUTES
+        ================================================== */}
 
-function App() {
-    const token = localStorage.getItem('adminToken');
+        <Route
+          path="/login"
+          element={
+            isAuthenticated()
+              ? <Navigate to="/" replace />
+              : <Login />
+          }
+        />
 
-    return (
-        <BrowserRouter>
-            <Toaster 
-                position="top-right"
-                toastOptions={{
-                    duration: 3000,
-                    style: {
-                        background: '#363636',
-                        color: '#fff',
-                    },
-                }}
+        {/* ==================================================
+            PROTECTED ADMIN ROUTES
+        ================================================== */}
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AdminLayout />}>
+
+            {/* Dashboard */}
+            <Route
+              path="/"
+              element={<Dashboard />}
             />
-            <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={token ? <Dashboard /> : <Navigate to="/login" />} />
-                <Route path="/users" element={token ? <Users /> : <Navigate to="/login" />} />
-                <Route path="/restaurants" element={token ? <Restaurants /> : <Navigate to="/login" />} />
-                <Route path="/orders" element={token ? <Orders /> : <Navigate to="/login" />} />
-                <Route path="/delivery-partners" element={token ? <DeliveryPartners /> : <Navigate to="/login" />} />
-                <Route path="*" element={<Navigate to="/dashboard" />} />
-            </Routes>
-        </BrowserRouter>
-    );
+
+            <Route
+              path="/dashboard"
+              element={<Dashboard />}
+            />
+
+            {/* Orders */}
+            <Route
+              path="/orders"
+              element={<Orders />}
+            />
+
+            {/* Restaurants */}
+            <Route
+              path="/restaurants"
+              element={<Restaurants />}
+            />
+
+            {/* Users */}
+            <Route
+              path="/users"
+              element={<Users />}
+            />
+
+            {/* Delivery Partners */}
+            <Route
+              path="/delivery-partners"
+              element={<DeliveryPartners />}
+            />
+
+            {/* Analytics */}
+            <Route
+              path="/analytics"
+              element={<Analytics />}
+            />
+
+            {/* Notifications */}
+            <Route
+              path="/notifications"
+              element={<Notifications />}
+            />
+
+            {/* Settings */}
+            <Route
+              path="/settings"
+              element={<Settings />}
+            />
+
+          </Route>
+        </Route>
+
+        {/* ==================================================
+            FALLBACK
+        ================================================== */}
+
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

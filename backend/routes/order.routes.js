@@ -3,13 +3,17 @@
 const express = require('express');
 const router = express.Router();
 
-// Import middleware (handle both possible export patterns)
+// ================= MIDDLEWARE =================
+
 const authMiddleware = require('../middleware/auth');
 const authenticate = authMiddleware.authenticate || authMiddleware;
+
+// ================= CONTROLLER =================
 
 const {
     createOrder,
     getUserOrders,
+    getRestaurantOrders,
     getOrderDetails,
     updateOrderStatus,
     getOrderById,
@@ -17,45 +21,75 @@ const {
     cancelOrder
 } = require('../controllers/order.controller');
 
-// ================= PROTECTED ORDER ROUTES =================
-// All order routes require authentication
+// ================= PROTECTED ROUTES =================
+
 router.use(authenticate);
 
-// ================= ORDER CREATION & MANAGEMENT =================
-// Create new order
+// =====================================================
+// ORDER CREATION
+// =====================================================
+
 router.post('/create', createOrder);
 
-// Get logged-in user orders
-router.get('/', getUserOrders);
-router.get('/my-orders', getUserOrders); // Support both endpoint patterns
+// =====================================================
+// ORDER LISTS
+// =====================================================
 
-// Cancel order
+// Customer's own orders
+router.get('/my-orders', getUserOrders);
+
+// Restaurant owner's orders
+// IMPORTANT: This must be BEFORE /:orderId
+router.get('/restaurant', getRestaurantOrders);
+
+// Generic customer order list
+router.get('/', getUserOrders);
+
+// =====================================================
+// ORDER DETAILS
+// =====================================================
+
+// /api/orders/details/:id
+router.get('/details/:id', getOrderById);
+
+// /api/orders/:orderId
+router.get('/:orderId', getOrderDetails);
+
+// =====================================================
+// ORDER TRACKING
+// =====================================================
+
+router.get('/:id/track', trackOrder);
+
+router.get('/track/:orderId', (req, res, next) => {
+    req.params.id = req.params.orderId;
+    next();
+}, trackOrder);
+
+// =====================================================
+// ORDER STATUS
+// =====================================================
+
+// Restaurant owner / admin
+router.put('/:orderId/status', updateOrderStatus);
+
+router.patch('/:id/status', (req, res, next) => {
+    req.params.orderId = req.params.id;
+    next();
+}, updateOrderStatus);
+
+// =====================================================
+// CANCEL ORDER
+// =====================================================
+
+// Customer cancellation
 router.put('/:id/cancel', cancelOrder);
+
 router.put('/:orderId/cancel', (req, res, next) => {
-    // Support both parameter names
-    req.params.id = req.params.id || req.params.orderId;
+    req.params.id = req.params.orderId;
     next();
 }, cancelOrder);
 
-// ================= ORDER RETRIEVAL =================
-// Get single order details (supports both parameter patterns)
-router.get('/:orderId', getOrderDetails);
-router.get('/details/:id', getOrderById);
-router.get('/:id', (req, res, next) => {
-    // Check if this is a track request or regular details
-    if (req.path.endsWith('/track')) {
-        return next();
-    }
-    getOrderById(req, res, next);
-});
-
-// Track order in real-time
-router.get('/:id/track', trackOrder);
-router.get('/track/:orderId', trackOrder);
-
-// ================= ORDER STATUS UPDATES =================
-// Update order status (admin/restaurant owner)
-router.put('/:orderId/status', updateOrderStatus);
-router.patch('/:id/status', updateOrderStatus);
+// =====================================================
 
 module.exports = router;

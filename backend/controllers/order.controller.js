@@ -3,7 +3,12 @@
 const { v4: uuidv4 } = require('uuid');
 const { pool } = require('../config/database');
 
-// ================= CREATE ORDER =================
+
+// =====================================================
+// CREATE ORDER
+// POST /api/orders/create
+// =====================================================
+
 const createOrder = async (req, res) => {
     const client = await pool.connect();
 
@@ -12,31 +17,27 @@ const createOrder = async (req, res) => {
 
         const {
             restaurant_id,
-            restaurant_name,
             items,
-            subtotal,
-            delivery_fee = 0,
-            tax = 0,
-            total_amount,
             delivery_address,
-            delivery_latitude,
-            delivery_longitude,
             payment_method = 'cash',
-            special_instructions = '',
-            offer_code
+            special_instructions = ''
         } = req.body;
 
-        // ================= VALIDATION =================
-        if (
-            !restaurant_id ||
-            !Array.isArray(items) ||
-            items.length === 0 ||
-            total_amount === undefined ||
-            total_amount === null
-        ) {
+        // =================================================
+        // VALIDATION
+        // =================================================
+
+        if (!restaurant_id) {
             return res.status(400).json({
                 success: false,
-                message: 'Missing required fields: restaurant_id, items, or total_amount'
+                message: 'Restaurant ID is required'
+            });
+        }
+
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Order items are required'
             });
         }
 
@@ -47,20 +48,43 @@ const createOrder = async (req, res) => {
             });
         }
 
-        // ================= START TRANSACTION =================
+        const validPaymentMethods = [
+            'cash',
+            'online',
+            'card',
+            'upi'
+        ];
+
+        if (!validPaymentMethods.includes(payment_method)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid payment method'
+            });
+        }
+
+        // =================================================
+        // START TRANSACTION
+        // =================================================
+
         await client.query('BEGIN');
 
-        // ================= GET RESTAURANT =================
+        // =================================================
+        // GET RESTAURANT
+        // =================================================
+
         const restaurantResult = await client.query(
-            `SELECT
+            `
+            SELECT
                 restaurant_id,
                 name,
                 delivery_fee,
                 min_order_amount,
                 is_open,
                 is_active
-             FROM restaurants
-             WHERE restaurant_id = $1`,
+            FROM restaurants
+            WHERE restaurant_id = $1
+            FOR UPDATE
+            `,
             [restaurant_id]
         );
 
@@ -75,6 +99,10 @@ const createOrder = async (req, res) => {
 
         const restaurant = restaurantResult.rows[0];
 
+        // =================================================
+        // RESTAURANT AVAILABILITY
+        // =================================================
+
         if (!restaurant.is_active) {
             await client.query('ROLLBACK');
 
@@ -84,76 +112,194 @@ const createOrder = async (req, res) => {
             });
         }
 
-        const finalRestaurantName = restaurant_name || restaurant.name;
+        if (!restaurant.is_open) {
+            await client.query('ROLLBACK');
 
-        // ================= APPLY PROMO CODE =================
-        let discount_amount = 0;
-        let appliedPromoCode = null;
-
-        if (offer_code) {
-            const promoResult = await client.query(
-                `SELECT *
-                 FROM "promoCodes"
-                 WHERE UPPER(code) = UPPER($1)
-                   AND is_active = true
-                   AND starts_at <= NOW()
-                   AND (expires_at IS NULL OR expires_at > NOW())
-                   AND (usage_limit IS NULL OR used_count < usage_limit)`,
-                [offer_code]
-            );
-
-            if (promoResult.rows.length > 0) {
-                const promo = promoResult.rows[0];
-
-                const orderSubtotal = Number(subtotal || 0);
-                const minimumOrder = Number(promo.min_order_amount || 0);
-
-                if (orderSubtotal >= minimumOrder) {
-                    if (promo.discount_type === 'percentage') {
-                        discount_amount =
-                            (orderSubtotal * Number(promo.discount_value)) / 100;
-
-                        if (promo.max_discount !== null) {
-                            discount_amount = Math.min(
-                                discount_amount,
-                                Number(promo.max_discount)
-                            );
-                        }
-                    } else if (promo.discount_type === 'fixed') {
-                        discount_amount = Number(promo.discount_value);
-                    } else if (promo.discount_type === 'free_delivery') {
-                        discount_amount = Number(delivery_fee || 0);
-                    }
-
-                    // Never allow discount to exceed subtotal + delivery fee
-                    discount_amount = Math.min(
-                        discount_amount,
-                        orderSubtotal + Number(delivery_fee || 0)
-                    );
-
-                    appliedPromoCode = promo.code;
-
-                    // Increase promo usage
-                    await client.query(
-                        `UPDATE "promoCodes"
-                         SET used_count = used_count + 1
-                         WHERE promo_id = $1`,
-                        [promo.promo_id]
-                    );
-                }
-            }
+            return res.status(400).json({
+                success: false,
+                message: 'Restaurant is currently closed'
+            });
         }
 
-        // ================= CALCULATE FINAL TOTAL =================
-        const subtotalAmount = Number(subtotal || 0);
-        const deliveryFeeAmount = Number(delivery_fee || restaurant.delivery_fee || 0);
-        const taxAmount = Number(tax || 0);
+        // =================================================
+        // GET ACTIVE CART
+        // =================================================
+
+        const cartResult = await client.query(
+            `
+            SELECT cart_id
+            FROM carts
+            WHERE user_id = $1
+              AND restaurant_id = $2
+              AND status = 'active'
+            LIMIT 1
+            FOR UPDATE
+            `,
+            [userId, restaurant_id]
+        );
+
+        if (cartResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+
+            return res.status(400).json({
+                success: false,
+                message: 'Active cart not found'
+            });
+        }
+
+        const cartId = cartResult.rows[0].cart_id;
+
+        // =================================================
+        // GET CART ITEMS
+        // =================================================
+
+        const cartItemsResult = await client.query(
+            `
+            SELECT
+                ci.cart_item_id,
+                ci.menu_item_id,
+                ci.item_name,
+                ci.quantity,
+                ci.unit_price,
+                ci.total_price,
+                mi.name AS current_item_name,
+                mi.price AS current_price,
+                mi.is_available,
+                mi.restaurant_id
+            FROM cart_items ci
+            INNER JOIN menu_items mi
+                ON ci.menu_item_id = mi.item_id
+            WHERE ci.cart_id = $1
+            FOR UPDATE
+            `,
+            [cartId]
+        );
+
+        if (cartItemsResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+
+            return res.status(400).json({
+                success: false,
+                message: 'Cart is empty'
+            });
+        }
+
+        // =================================================
+        // VALIDATE CART ITEMS
+        // =================================================
+
+        let calculatedSubtotal = 0;
+
+        const orderItems = [];
+
+        for (const cartItem of cartItemsResult.rows) {
+
+            if (cartItem.restaurant_id !== restaurant_id) {
+                await client.query('ROLLBACK');
+
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cart contains an item from another restaurant'
+                });
+            }
+
+            if (!cartItem.is_available) {
+                await client.query('ROLLBACK');
+
+                return res.status(400).json({
+                    success: false,
+                    message: `${cartItem.current_item_name} is currently unavailable`
+                });
+            }
+
+            const quantity = Number(cartItem.quantity);
+            const unitPrice = Number(cartItem.current_price);
+
+            if (!Number.isInteger(quantity) || quantity <= 0) {
+                await client.query('ROLLBACK');
+
+                return res.status(400).json({
+                    success: false,
+                    message: `Invalid quantity for ${cartItem.current_item_name}`
+                });
+            }
+
+            if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+                await client.query('ROLLBACK');
+
+                return res.status(400).json({
+                    success: false,
+                    message: `Invalid price for ${cartItem.current_item_name}`
+                });
+            }
+
+            const itemTotal = unitPrice * quantity;
+
+            calculatedSubtotal += itemTotal;
+
+            orderItems.push({
+                menu_item_id: cartItem.menu_item_id,
+                item_name: cartItem.current_item_name,
+                quantity,
+                unit_price: unitPrice,
+                total_price: itemTotal
+            });
+        }
+
+        // =================================================
+        // MINIMUM ORDER CHECK
+        // =================================================
+
+        const minimumOrderAmount =
+            Number(restaurant.min_order_amount || 0);
+
+        if (calculatedSubtotal < minimumOrderAmount) {
+            await client.query('ROLLBACK');
+
+            return res.status(400).json({
+                success: false,
+                message: `Minimum order amount is ₹${minimumOrderAmount.toFixed(2)}`,
+                data: {
+                    subtotal: Number(calculatedSubtotal.toFixed(2)),
+                    minimum_order_amount: minimumOrderAmount
+                }
+            });
+        }
+
+        // =================================================
+        // DELIVERY FEE
+        // =================================================
+
+        const deliveryFeeAmount =
+            Number(restaurant.delivery_fee || 0);
+
+        // =================================================
+        // TAX
+        // =================================================
+        // Current project rule: 5% tax
+
+        const taxAmount =
+            calculatedSubtotal * 0.05;
+
+        // =================================================
+        // DISCOUNT
+        // =================================================
+        // Promo system will be added later when promo_codes
+        // table/module is implemented.
+
+        const discountAmount = 0;
+        const promoCode = null;
+        const promoDiscount = 0;
+
+        // =================================================
+        // FINAL TOTAL
+        // =================================================
 
         const finalTotalAmount =
-            subtotalAmount +
+            calculatedSubtotal +
             deliveryFeeAmount +
             taxAmount -
-            discount_amount;
+            discountAmount;
 
         if (finalTotalAmount < 0) {
             await client.query('ROLLBACK');
@@ -164,15 +310,28 @@ const createOrder = async (req, res) => {
             });
         }
 
-        // ================= GENERATE ORDER ID =================
+        // =================================================
+        // GENERATE ORDER ID
+        // =================================================
+
         const orderId = uuidv4();
 
-        const order_number =
+        const orderNumber =
             `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-        // ================= INSERT ORDER =================
+        // =================================================
+        // ITEMS JSON
+        // =================================================
+
+        const itemsJson = JSON.stringify(orderItems);
+
+        // =================================================
+        // INSERT ORDER
+        // =================================================
+
         await client.query(
-            `INSERT INTO orders (
+            `
+            INSERT INTO orders (
                 order_id,
                 order_number,
                 user_id,
@@ -185,8 +344,6 @@ const createOrder = async (req, res) => {
                 discount_amount,
                 total_amount,
                 delivery_address,
-                delivery_latitude,
-                delivery_longitude,
                 special_instructions,
                 payment_method,
                 order_status,
@@ -195,70 +352,57 @@ const createOrder = async (req, res) => {
                 promo_discount
             )
             VALUES (
-                $1, $2, $3, $4, $5,
-                $6, $7, $8, $9, $10,
-                $11, $12, $13, $14, $15,
-                $16, $17, $18, $19, $20
-            )`,
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6,
+                $7,
+                $8,
+                $9,
+                $10,
+                $11,
+                $12,
+                $13,
+                $14,
+                $15,
+                $16,
+                $17,
+                $18
+            )
+            `,
             [
                 orderId,
-                order_number,
+                orderNumber,
                 userId,
                 restaurant_id,
-                finalRestaurantName,
-                JSON.stringify(items),
-                subtotalAmount,
+                restaurant.name,
+                itemsJson,
+                calculatedSubtotal,
                 deliveryFeeAmount,
                 taxAmount,
-                discount_amount,
+                discountAmount,
                 finalTotalAmount,
                 delivery_address,
-                delivery_latitude || null,
-                delivery_longitude || null,
                 special_instructions,
                 payment_method,
                 'pending',
                 'pending',
-                appliedPromoCode,
-                discount_amount
+                promoCode,
+                promoDiscount
             ]
         );
 
-        // ================= INSERT ORDER ITEMS =================
-        for (const item of items) {
-            const menuItemId =
-                item.menu_item_id ||
-                item.item_id ||
-                item.menuItemId ||
-                null;
+        // =================================================
+        // INSERT ORDER ITEMS
+        // =================================================
 
-            const variantId =
-                item.variant_id ||
-                item.variantId ||
-                null;
-
-            const itemName =
-                item.item_name ||
-                item.name ||
-                'Menu Item';
-
-            const quantity = Number(item.quantity || 1);
-
-            const unitPrice = Number(
-                item.unit_price ||
-                item.price ||
-                0
-            );
-
-            const itemTotal =
-                Number(
-                    item.total_price ||
-                    item.total ||
-                    unitPrice * quantity
-                );
+        for (const item of orderItems) {
 
             await client.query(
-                `INSERT INTO order_items (
+                `
+                INSERT INTO order_items (
                     order_item_id,
                     order_id,
                     menu_item_id,
@@ -268,67 +412,96 @@ const createOrder = async (req, res) => {
                     unit_price,
                     total_price
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                VALUES (
+                    $1,
+                    $2,
+                    $3,
+                    $4,
+                    $5,
+                    $6,
+                    $7,
+                    $8
+                )
+                `,
                 [
                     uuidv4(),
                     orderId,
-                    menuItemId,
-                    variantId,
-                    itemName,
-                    quantity,
-                    unitPrice,
-                    itemTotal
+                    item.menu_item_id,
+                    null,
+                    item.item_name,
+                    item.quantity,
+                    item.unit_price,
+                    item.total_price
                 ]
             );
         }
 
-        // ================= CLEAR CART =================
-        const cartResult = await client.query(
-            `SELECT cart_id
-             FROM carts
-             WHERE user_id = $1
-               AND restaurant_id = $2
-               AND status = 'active'
-             LIMIT 1`,
-            [userId, restaurant_id]
+        // =================================================
+        // CLEAR CART
+        // =================================================
+
+        await client.query(
+            `
+            DELETE FROM cart_items
+            WHERE cart_id = $1
+            `,
+            [cartId]
         );
 
-        if (cartResult.rows.length > 0) {
-            const cartId = cartResult.rows[0].cart_id;
+        await client.query(
+            `
+            UPDATE carts
+            SET status = 'completed',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE cart_id = $1
+            `,
+            [cartId]
+        );
 
-            await client.query(
-                `DELETE FROM cart_items
-                 WHERE cart_id = $1`,
-                [cartId]
-            );
+        // =================================================
+        // COMMIT
+        // =================================================
 
-            await client.query(
-                `UPDATE carts
-                 SET status = 'completed',
-                     updated_at = CURRENT_TIMESTAMP
-                 WHERE cart_id = $1`,
-                [cartId]
-            );
-        }
-
-        // ================= COMMIT =================
         await client.query('COMMIT');
+
+        // =================================================
+        // RESPONSE
+        // =================================================
 
         return res.status(201).json({
             success: true,
             message: 'Order created successfully',
             data: {
                 order_id: orderId,
-                order_number,
-                discount_amount,
-                final_total: finalTotalAmount
+                order_number: orderNumber,
+                restaurant_id: restaurant_id,
+                restaurant_name: restaurant.name,
+                subtotal: Number(calculatedSubtotal.toFixed(2)),
+                delivery_fee: Number(deliveryFeeAmount.toFixed(2)),
+                tax_amount: Number(taxAmount.toFixed(2)),
+                discount_amount: Number(discountAmount.toFixed(2)),
+                total_amount: Number(finalTotalAmount.toFixed(2)),
+                payment_method,
+                payment_status: 'pending',
+                order_status: 'pending'
             }
         });
 
     } catch (err) {
-        await client.query('ROLLBACK');
 
-        console.error('Create Order Error:', err);
+        try {
+            await client.query('ROLLBACK');
+        } catch (rollbackError) {
+            console.error(
+                'Rollback Error:',
+                rollbackError.message
+            );
+        }
+
+        console.error(
+            'Create Order Error:',
+            err
+        );
 
         return res.status(500).json({
             success: false,
@@ -338,38 +511,56 @@ const createOrder = async (req, res) => {
                     ? err.message
                     : undefined
         });
+
     } finally {
         client.release();
     }
 };
 
 
-// ================= GET USER ORDERS =================
+// =====================================================
+// GET USER ORDERS
+// GET /api/orders
+// GET /api/orders/my-orders
+// =====================================================
+
 const getUserOrders = async (req, res) => {
+
     try {
+
         const userId = req.user.userId;
 
         const result = await pool.query(
-            `SELECT
-                order_id,
-                order_number,
-                restaurant_id,
-                restaurant_name,
-                items,
-                subtotal,
-                delivery_fee,
-                tax_amount,
-                discount_amount,
-                total_amount,
-                order_status,
-                payment_status,
-                payment_method,
-                delivery_address,
-                created_at,
-                updated_at
-             FROM orders
-             WHERE user_id = $1
-             ORDER BY created_at DESC`,
+            `
+            SELECT
+                o.order_id,
+                o.order_number,
+                o.user_id,
+                o.restaurant_id,
+                o.restaurant_name,
+                o.items,
+                o.subtotal,
+                o.delivery_fee,
+                o.tax_amount,
+                o.discount_amount,
+                o.total_amount,
+                o.payment_method,
+                o.payment_status,
+                o.order_status,
+                o.delivery_address,
+                o.special_instructions,
+                o.created_at,
+                o.updated_at,
+                o.delivered_at,
+                o.delivery_partner_id,
+                o.estimated_delivery_time,
+                o.actual_delivery_time,
+                o.promo_code,
+                o.promo_discount
+            FROM orders o
+            WHERE o.user_id = $1
+            ORDER BY o.created_at DESC
+            `,
             [userId]
         );
 
@@ -380,7 +571,11 @@ const getUserOrders = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Get Orders Error:', err.message);
+
+        console.error(
+            'Get User Orders Error:',
+            err.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -390,47 +585,206 @@ const getUserOrders = async (req, res) => {
 };
 
 
-// ================= GET ORDER DETAILS =================
-const getOrderDetails = async (req, res) => {
+// =====================================================
+// GET RESTAURANT ORDERS
+// GET /api/orders/restaurant
+// =====================================================
+
+const getRestaurantOrders = async (req, res) => {
+
     try {
+
+        const ownerId = req.user.userId;
+        const userRole = req.user.userType;
+
+        // =================================================
+        // ROLE CHECK
+        // =================================================
+
+        if (
+            userRole !== 'restaurant_owner' &&
+            userRole !== 'admin'
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Restaurant owners only.'
+            });
+        }
+
+        let query = `
+            SELECT
+                o.order_id,
+                o.order_number,
+                o.user_id,
+                u.full_name AS customer_name,
+                u.phone AS customer_phone,
+                o.restaurant_id,
+                o.restaurant_name,
+                o.items,
+                o.subtotal,
+                o.delivery_fee,
+                o.tax_amount,
+                o.discount_amount,
+                o.total_amount,
+                o.payment_method,
+                o.payment_status,
+                o.order_status,
+                o.delivery_address,
+                o.special_instructions,
+                o.created_at,
+                o.updated_at,
+                o.delivered_at,
+                o.delivery_partner_id,
+                o.estimated_delivery_time,
+                o.actual_delivery_time,
+                o.promo_code,
+                o.promo_discount
+            FROM orders o
+            INNER JOIN restaurants r
+                ON o.restaurant_id = r.restaurant_id
+            LEFT JOIN users u
+                ON o.user_id = u.user_id
+        `;
+
+        const queryParams = [];
+
+        // =================================================
+        // RESTAURANT OWNER
+        // =================================================
+
+        if (userRole === 'restaurant_owner') {
+
+            query += `
+                WHERE r.owner_id = $1
+            `;
+
+            queryParams.push(ownerId);
+        }
+
+        // =================================================
+        // ADMIN
+        // =================================================
+
+        query += `
+            ORDER BY o.created_at DESC
+        `;
+
+        const result = await pool.query(
+            query,
+            queryParams
+        );
+
+        return res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length
+        });
+
+    } catch (err) {
+
+        console.error(
+            'Get Restaurant Orders Error:',
+            err.message
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch restaurant orders'
+        });
+    }
+};
+
+
+// =====================================================
+// GET ORDER DETAILS
+// GET /api/orders/:orderId
+// =====================================================
+
+const getOrderDetails = async (req, res) => {
+
+    try {
+
         const userId = req.user.userId;
         const { orderId } = req.params;
 
         const result = await pool.query(
-            `SELECT
-                o.*,
-                d.status AS delivery_status,
-                d.latitude AS current_latitude,
-                d.longitude AS current_longitude,
-                d.updated_at AS delivery_updated_at,
-                u.full_name AS delivery_partner_name,
-                u.phone AS delivery_partner_phone
-             FROM orders o
-             LEFT JOIN delivery_tracking d
-                ON o.order_id = d.order_id
-             LEFT JOIN users u
-                ON d.delivery_partner_id = u.user_id
-             WHERE o.order_id = $1
-               AND o.user_id = $2
-             ORDER BY d.updated_at DESC
-             LIMIT 1`,
+            `
+            SELECT
+                o.order_id,
+                o.order_number,
+                o.user_id,
+                o.restaurant_id,
+                o.restaurant_name,
+                o.items,
+                o.subtotal,
+                o.delivery_fee,
+                o.tax_amount,
+                o.discount_amount,
+                o.total_amount,
+                o.payment_method,
+                o.payment_status,
+                o.order_status,
+                o.delivery_address,
+                o.special_instructions,
+                o.created_at,
+                o.updated_at,
+                o.delivered_at,
+                o.delivery_partner_id,
+                o.estimated_delivery_time,
+                o.actual_delivery_time,
+                o.promo_code,
+                o.promo_discount
+            FROM orders o
+            WHERE o.order_id = $1
+              AND o.user_id = $2
+            `,
             [orderId, userId]
         );
 
         if (result.rows.length === 0) {
+
             return res.status(404).json({
                 success: false,
                 message: 'Order not found'
             });
         }
 
+        // =================================================
+        // GET ORDER ITEMS
+        // =================================================
+
+        const itemsResult = await pool.query(
+            `
+            SELECT
+                order_item_id,
+                menu_item_id,
+                variant_id,
+                item_name,
+                quantity,
+                unit_price,
+                total_price
+            FROM order_items
+            WHERE order_id = $1
+            ORDER BY created_at ASC
+            `,
+            [orderId]
+        );
+
+        const order = result.rows[0];
+
+        order.items = itemsResult.rows;
+
         return res.json({
             success: true,
-            data: result.rows[0]
+            data: order
         });
 
     } catch (err) {
-        console.error('Get Order Details Error:', err.message);
+
+        console.error(
+            'Get Order Details Error:',
+            err.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -440,60 +794,128 @@ const getOrderDetails = async (req, res) => {
 };
 
 
-// ================= GET ORDER BY ID =================
+// =====================================================
+// GET ORDER BY ID
+// GET /api/orders/details/:id
+// =====================================================
+
 const getOrderById = async (req, res) => {
+
     try {
+
         const { id } = req.params;
+
         const userId = req.user.userId;
         const userRole = req.user.userType;
 
         let query = `
             SELECT
-                o.*,
-                d.status AS delivery_status,
-                d.latitude AS current_latitude,
-                d.longitude AS current_longitude,
-                d.updated_at AS delivery_updated_at,
-                u.full_name AS delivery_partner_name,
-                u.phone AS delivery_partner_phone
+                o.order_id,
+                o.order_number,
+                o.user_id,
+                o.restaurant_id,
+                o.restaurant_name,
+                o.items,
+                o.subtotal,
+                o.delivery_fee,
+                o.tax_amount,
+                o.discount_amount,
+                o.total_amount,
+                o.payment_method,
+                o.payment_status,
+                o.order_status,
+                o.delivery_address,
+                o.special_instructions,
+                o.created_at,
+                o.updated_at,
+                o.delivered_at,
+                o.delivery_partner_id,
+                o.estimated_delivery_time,
+                o.actual_delivery_time,
+                o.promo_code,
+                o.promo_discount
             FROM orders o
-            LEFT JOIN delivery_tracking d
-                ON o.order_id = d.order_id
-            LEFT JOIN users u
-                ON d.delivery_partner_id = u.user_id
             WHERE o.order_id = $1
         `;
 
         const queryParams = [id];
 
-        // Admin can view any order.
-        // Other users can view only their own order.
-        if (userRole !== 'admin') {
-            query += ` AND o.user_id = $2`;
+        // =================================================
+        // CUSTOMER
+        // =================================================
+
+        if (
+            userRole !== 'admin' &&
+            userRole !== 'restaurant_owner'
+        ) {
+            query += `
+                AND o.user_id = $2
+            `;
+
             queryParams.push(userId);
         }
 
-        query += `
-            ORDER BY d.updated_at DESC
-            LIMIT 1
-        `;
+        // =================================================
+        // RESTAURANT OWNER
+        // =================================================
 
-        const result = await pool.query(query, queryParams);
+        if (userRole === 'restaurant_owner') {
+            query += `
+                AND o.restaurant_id IN (
+                    SELECT restaurant_id
+                    FROM restaurants
+                    WHERE owner_id = $2
+                )
+            `;
+
+            queryParams.push(userId);
+        }
+
+        const result = await pool.query(
+            query,
+            queryParams
+        );
 
         if (result.rows.length === 0) {
+
             return res.status(404).json({
                 success: false,
                 message: 'Order not found'
             });
         }
 
+        const itemsResult = await pool.query(
+            `
+            SELECT
+                order_item_id,
+                menu_item_id,
+                variant_id,
+                item_name,
+                quantity,
+                unit_price,
+                total_price
+            FROM order_items
+            WHERE order_id = $1
+            ORDER BY created_at ASC
+            `,
+            [id]
+        );
+
+        const order = result.rows[0];
+
+        order.items = itemsResult.rows;
+
         return res.json({
             success: true,
-            data: result.rows[0]
+            data: order
         });
 
     } catch (error) {
-        console.error('Get Order Error:', error);
+
+        console.error(
+            'Get Order By ID Error:',
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -503,38 +925,47 @@ const getOrderById = async (req, res) => {
 };
 
 
-// ================= TRACK ORDER =================
+// =====================================================
+// TRACK ORDER
+// GET /api/orders/:id/track
+// =====================================================
+//
+// delivery_tracking table does not exist yet.
+// Therefore this endpoint currently returns order-level
+// tracking information only.
+//
+// =====================================================
+
 const trackOrder = async (req, res) => {
+
     try {
+
         const { id } = req.params;
         const userId = req.user.userId;
 
         const result = await pool.query(
-            `SELECT
-                o.order_status,
+            `
+            SELECT
+                o.order_id,
                 o.order_number,
                 o.restaurant_name,
+                o.order_status,
                 o.total_amount,
-                d.status AS delivery_status,
-                d.latitude AS current_latitude,
-                d.longitude AS current_longitude,
-                d.updated_at AS location_updated_at,
+                o.delivery_address,
                 o.estimated_delivery_time,
-                u.full_name AS delivery_partner_name,
-                u.phone AS delivery_partner_phone
-             FROM orders o
-             LEFT JOIN delivery_tracking d
-                ON o.order_id = d.order_id
-             LEFT JOIN users u
-                ON d.delivery_partner_id = u.user_id
-             WHERE o.order_id = $1
-               AND o.user_id = $2
-             ORDER BY d.updated_at DESC
-             LIMIT 1`,
+                o.delivery_partner_id,
+                o.actual_delivery_time,
+                o.created_at,
+                o.updated_at
+            FROM orders o
+            WHERE o.order_id = $1
+              AND o.user_id = $2
+            `,
             [id, userId]
         );
 
         if (result.rows.length === 0) {
+
             return res.status(404).json({
                 success: false,
                 message: 'Order not found'
@@ -547,7 +978,11 @@ const trackOrder = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Track Order Error:', error);
+
+        console.error(
+            'Track Order Error:',
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -557,12 +992,27 @@ const trackOrder = async (req, res) => {
 };
 
 
-// ================= UPDATE ORDER STATUS =================
+// =====================================================
+// UPDATE ORDER STATUS
+// PUT /api/orders/:orderId/status
+// PATCH /api/orders/:id/status
+// =====================================================
+
 const updateOrderStatus = async (req, res) => {
+
     try {
-        const { orderId } = req.params;
+
+        const orderId =
+            req.params.orderId || req.params.id;
+
         const { status } = req.body;
+
+        const userId = req.user.userId;
         const userRole = req.user.userType;
+
+        // =================================================
+        // VALID STATUSES
+        // =================================================
 
         const validStatuses = [
             'pending',
@@ -576,24 +1026,60 @@ const updateOrderStatus = async (req, res) => {
         ];
 
         if (!validStatuses.includes(status)) {
+
             return res.status(400).json({
                 success: false,
-                message: 'Invalid order status'
+                message: 'Invalid order status',
+                valid_statuses: validStatuses
             });
         }
 
+        // =================================================
+        // ADMIN
+        // =================================================
+
         let query = `
             UPDATE orders
-            SET order_status = $1,
+            SET
+                order_status = $1,
                 updated_at = CURRENT_TIMESTAMP
+        `;
+
+        const queryParams = [
+            status,
+            orderId
+        ];
+
+        // =================================================
+        // DELIVERED TIMESTAMP
+        // =================================================
+
+        if (status === 'delivered') {
+
+            query += `,
+                delivered_at = CURRENT_TIMESTAMP,
+                actual_delivery_time = CURRENT_TIMESTAMP
+            `;
+        }
+
+        // =================================================
+        // NON-ADMIN
+        // =================================================
+
+        query += `
             WHERE order_id = $2
         `;
 
-        const queryParams = [status, orderId];
-
-        // Restaurant owners can update orders belonging
-        // to their restaurants.
         if (userRole !== 'admin') {
+
+            if (userRole !== 'restaurant_owner') {
+
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied'
+                });
+            }
+
             query += `
                 AND restaurant_id IN (
                     SELECT restaurant_id
@@ -602,14 +1088,27 @@ const updateOrderStatus = async (req, res) => {
                 )
             `;
 
-            queryParams.push(req.user.userId);
+            queryParams.push(userId);
         }
 
-        query += ` RETURNING *`;
+        query += `
+            RETURNING
+                order_id,
+                order_number,
+                order_status,
+                payment_status,
+                updated_at,
+                delivered_at,
+                actual_delivery_time
+        `;
 
-        const result = await pool.query(query, queryParams);
+        const result = await pool.query(
+            query,
+            queryParams
+        );
 
         if (result.rows.length === 0) {
+
             return res.status(404).json({
                 success: false,
                 message:
@@ -624,7 +1123,11 @@ const updateOrderStatus = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Update Order Status Error:', err.message);
+
+        console.error(
+            'Update Order Status Error:',
+            err.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -634,24 +1137,38 @@ const updateOrderStatus = async (req, res) => {
 };
 
 
-// ================= CANCEL ORDER =================
+// =====================================================
+// CANCEL ORDER
+// PUT /api/orders/:id/cancel
+// =====================================================
+
 const cancelOrder = async (req, res) => {
+
     try {
+
         const { id } = req.params;
         const userId = req.user.userId;
 
         const result = await pool.query(
-            `UPDATE orders
-             SET order_status = 'cancelled',
-                 updated_at = CURRENT_TIMESTAMP
-             WHERE order_id = $1
-               AND user_id = $2
-               AND order_status = 'pending'
-             RETURNING order_id, order_number, order_status`,
+            `
+            UPDATE orders
+            SET
+                order_status = 'cancelled',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_id = $1
+              AND user_id = $2
+              AND order_status = 'pending'
+            RETURNING
+                order_id,
+                order_number,
+                order_status,
+                updated_at
+            `,
             [id, userId]
         );
 
         if (result.rows.length === 0) {
+
             return res.status(400).json({
                 success: false,
                 message:
@@ -666,7 +1183,11 @@ const cancelOrder = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Cancel Order Error:', error);
+
+        console.error(
+            'Cancel Order Error:',
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -676,10 +1197,14 @@ const cancelOrder = async (req, res) => {
 };
 
 
-// ================= EXPORT =================
+// =====================================================
+// EXPORTS
+// =====================================================
+
 module.exports = {
     createOrder,
     getUserOrders,
+    getRestaurantOrders,
     getOrderDetails,
     getOrderById,
     trackOrder,
